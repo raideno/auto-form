@@ -4,6 +4,7 @@ import type * as z from "zod/v4";
 import type { UseFormReturn } from "react-hook-form";
 
 import type { FieldMetadata } from "./registry";
+import type { EnumOption } from "./enhanced-zod";
 
 export interface AutoFormContextValue<
   TSchemaType extends z.ZodObject<z.ZodRawShape>
@@ -27,7 +28,7 @@ export interface FieldConfig {
   halfWidth: boolean;
   minLength?: number;
   maxLength?: number;
-  options?: Array<string>;
+  enhancedOptions?: Array<EnumOption> | null;
   meta?: FieldMetadata;
   fileMaxSize?: number;
   fileMinSize?: number;

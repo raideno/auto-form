@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 
-import { Button, Text } from "@radix-ui/themes";
+import { IconButton, Text, Dialog, Flex } from "@radix-ui/themes";
 import { Cross1Icon, FileIcon, UploadIcon } from "@radix-ui/react-icons";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -10,33 +11,102 @@ interface FileUploadProps {
   onChange: (files: Array<File>) => void;
   multiple?: boolean;
   accept?: string;
-  minFiles?: number;
-  maxFiles?: number;
   minSize?: number; // in bytes
   maxSize?: number; // in bytes
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  noDuplicates?: boolean;
 }
 
 export function FileUpload({
   value = [],
   onChange,
-  multiple = false,
   accept,
-  minFiles = 1,
-  maxFiles = multiple ? 10 : 1,
-  minSize = 10, // 10MB default
-  maxSize = 10 * 1024 * 1024, // 10MB default
+  minSize = 1, // 1 Byte
+  maxSize = 10 * 1024 * 1024, // 10MB
   disabled = false,
-  placeholder = multiple
-    ? "Choose files or drag and drop"
-    : "Choose file or drag and drop",
+  placeholder = "Choose file(s) or drag and drop",
   className,
+  noDuplicates = false,
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string>("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const isImageFile = (file: File): boolean => {
+    return file.type.startsWith("image/");
+  };
+
+  const createImagePreview = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImagePreview = async (file: File) => {
+    if (isImageFile(file)) {
+      setIsPreviewLoading(true);
+      setIsPreviewOpen(true);
+      try {
+        const preview = await createImagePreview(file);
+        setPreviewImage(preview);
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    }
+  };
+
+  const ImageThumbnail = ({
+    file,
+    onClick,
+  }: {
+    file: File;
+    onClick: () => void;
+  }) => {
+    const [thumbnail, setThumbnail] = useState<string>("");
+
+    React.useEffect(() => {
+      if (isImageFile(file)) {
+        createImagePreview(file).then(setThumbnail);
+      }
+    }, [file]);
+
+    if (!isImageFile(file)) {
+      return (
+        <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
+          <FileIcon color="gray" className="w-4 h-4" />
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        whileHover={{ scale: 1.1, rotate: 2 }}
+        whileTap={{ scale: 0.9 }}
+        className="cursor-pointer rounded overflow-hidden border border-gray-200"
+        onClick={onClick}
+        transition={{ duration: 0.2 }}
+      >
+        {thumbnail ? (
+          <img
+            src={thumbnail}
+            alt={file.name}
+            className="w-8 h-8 object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
+            <FileIcon color="gray" className="w-4 h-4" />
+          </div>
+        )}
+      </motion.div>
+    );
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -46,6 +116,20 @@ export function FileUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const isDuplicateFile = (
+    newFile: File,
+    existingFiles: Array<File>
+  ): boolean => {
+    if (!noDuplicates) return false;
+
+    return existingFiles.some(
+      (existingFile) =>
+        existingFile.name === newFile.name &&
+        existingFile.size === newFile.size &&
+        existingFile.lastModified === newFile.lastModified
+    );
+  };
+
   const validateFiles = (
     files: FileList
   ): { valid: Array<File>; errors: Array<string> } => {
@@ -53,7 +137,6 @@ export function FileUpload({
     const errors: Array<string> = [];
 
     Array.from(files).forEach((file) => {
-      // Check file size
       if (file.size > maxSize) {
         errors.push(
           `${file.name}: File size exceeds ${formatFileSize(maxSize)}`
@@ -68,29 +151,8 @@ export function FileUpload({
         return;
       }
 
-      // Check total file count
-      const totalFiles = multiple ? value.length + validFiles.length : 0;
-      if (totalFiles >= maxFiles) {
-        errors.push(
-          `Maximum ${maxFiles} file${maxFiles > 1 ? "s" : ""} allowed`
-        );
-        return;
-      }
-
-      if (totalFiles < minFiles) {
-        errors.push(
-          `Must have a minimum of ${minFiles} file${minFiles > 1 ? "s" : ""}`
-        );
-        return;
-      }
-
-      // Check for duplicates
-      const isDuplicate = value.some(
-        (existingFile) =>
-          existingFile.name === file.name && existingFile.size === file.size
-      );
-      if (isDuplicate) {
-        errors.push(`${file.name}: File already exists`);
+      if (isDuplicateFile(file, value)) {
+        errors.push(`${file.name}: File already uploaded`);
         return;
       }
 
@@ -101,23 +163,23 @@ export function FileUpload({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("change");
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const { valid, errors } = validateFiles(files);
 
     if (errors.length > 0) {
-      setError(errors[0]); // Show first error
-      setTimeout(() => setError(""), 3000); // Clear error after 3 seconds
+      setError(errors[0]);
+      setTimeout(() => setError(""), 3000);
     }
 
     if (valid.length > 0) {
-      const newFiles = multiple ? [...value, ...valid] : valid;
+      const newFiles = [...value, ...valid];
       onChange(newFiles);
       setError("");
     }
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -145,13 +207,16 @@ export function FileUpload({
 
     const { valid, errors } = validateFiles(files);
 
+    console.log("[valid,value]:", valid, value);
+
     if (errors.length > 0) {
       setError(errors[0]);
       setTimeout(() => setError(""), 3000);
     }
 
     if (valid.length > 0) {
-      const newFiles = multiple ? [...value, ...valid] : valid;
+      const newFiles = [...value, ...valid];
+      console.log("[newFiles]:", newFiles);
       onChange(newFiles);
       setError("");
     }
@@ -172,25 +237,39 @@ export function FileUpload({
     <div className={cn("w-full", className)}>
       {/* File List - Show uploaded files */}
       {value.length > 0 && (
-        <div className="mb-3 space-y-2">
-          {value.map((file, index) => (
-            <div
-              key={`${file.name}-${index}`}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-            >
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <FileIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <Text size="2" className="font-medium truncate">
-                    {file.name}
-                  </Text>
-                  <Text size="1" color="gray">
-                    {formatFileSize(file.size)}
-                  </Text>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3 space-y-2"
+        >
+          <AnimatePresence>
+            {value.map((file, index) => (
+              <motion.div
+                key={`${file.name}-${file.size}-${
+                  file.lastModified || Date.now()
+                }`}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]"
+              >
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <ImageThumbnail
+                    file={file}
+                    onClick={() => handleImagePreview(file)}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <Text size="1" color="gray">
+                      {formatFileSize(file.size)}
+                    </Text>
+                    <Text> - </Text>
+                    <Text size="2" className="font-medium truncate">
+                      {file.name}
+                    </Text>
+                  </div>
                 </div>
-              </div>
-              {!disabled && (
-                <Button
+                <IconButton
                   type="button"
                   variant="ghost"
                   size="1"
@@ -198,11 +277,11 @@ export function FileUpload({
                   className="flex-shrink-0 ml-2"
                 >
                   <Cross1Icon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
+                </IconButton>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* Upload Area */}
@@ -224,12 +303,13 @@ export function FileUpload({
         <input
           ref={fileInputRef}
           type="file"
-          multiple={multiple}
+          multiple={true}
           accept={accept}
           onChange={handleFileChange}
           disabled={disabled}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          style={{ fontSize: 0 }} // Prevent file name from showing
+          className="hidden"
+          // className="absolute inset-0 w-full h-full opacity-100 cursor-pointer"
+          // style={{ fontSize: 0 }}
         />
 
         <div className="flex flex-col items-center space-y-2">
@@ -242,14 +322,16 @@ export function FileUpload({
               {accept ? `Accepted: ${accept}` : "All file types accepted"} • Min{" "}
               {formatFileSize(minSize)} • Max {formatFileSize(maxSize)}
             </Text>
-            {multiple && (
-              <Text size="2" color="gray">
-                At least {minFiles} and Up to {maxFiles} files
-              </Text>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Uploaded Files Summary */}
+      {value.length > 0 && (
+        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          {value.length} file{value.length === 1 ? "" : "s"} uploaded
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -257,6 +339,79 @@ export function FileUpload({
           {error}
         </div>
       )}
+
+      {/* Image Preview Dialog */}
+      <Dialog.Root
+        open={isPreviewOpen}
+        onOpenChange={(open) => {
+          setIsPreviewOpen(open);
+          if (!open) {
+            setPreviewImage(null);
+            setIsPreviewLoading(false);
+          }
+        }}
+      >
+        <Dialog.Content
+          style={{ maxWidth: "95vw", maxHeight: "95vh", padding: 0 }}
+          className="relative overflow-hidden"
+        >
+          {/* Close button in top right */}
+          <Dialog.Close>
+            <IconButton
+              variant="soft"
+              color="gray"
+              size="2"
+              className="absolute top-4 right-4 z-10"
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                zIndex: 10,
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <Cross1Icon />
+            </IconButton>
+          </Dialog.Close>
+
+          <Dialog.Title className="sr-only">Image Preview</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            Image Preview
+          </Dialog.Description>
+
+          {/* Image container */}
+          <Flex
+            justify="center"
+            align="center"
+            className="min-h-[300px] bg-black/5"
+            style={{ minHeight: "300px" }}
+          >
+            {isPreviewLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center justify-center"
+              >
+                <Text size="3" color="gray">
+                  Loading preview...
+                </Text>
+              </motion.div>
+            ) : previewImage ? (
+              <motion.img
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[90vh] object-contain"
+                style={{ maxWidth: "100%", maxHeight: "90vh" }}
+              />
+            ) : null}
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
     </div>
   );
 }

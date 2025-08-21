@@ -2,6 +2,7 @@ import _ from "lodash";
 import z from "zod/v4";
 
 import { MetadataRegistry } from "./registry";
+import { getEnhancedOptions } from "./enhanced-zod";
 
 import type { FieldMetadata } from "./registry";
 import type { FieldConfig, FieldGroup } from "./context";
@@ -45,6 +46,7 @@ export const DEFAULT_PLACEHOLDERS = {
   "datetime-local": "Select date and time",
   tags: "Enter tags and press Enter",
   select: "Select an option",
+  radio: "Choose an option",
   file: "Upload a file",
   files: "Upload multiple files",
 } as const;
@@ -165,7 +167,7 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
 
   let fieldType = meta.type || "text";
   let placeholder = meta.placeholder;
-  let options: Array<string> | undefined;
+  let enhancedOptions: ReturnType<typeof getEnhancedOptions> = null;
 
   let minLength: number | undefined;
   let maxLength: number | undefined;
@@ -211,11 +213,22 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     fieldType = "file";
     placeholder = placeholder || DEFAULT_PLACEHOLDERS.file;
   } else if (zodTypeGuards.enum(baseType)) {
-    fieldType = "select";
-    placeholder = placeholder || DEFAULT_PLACEHOLDERS.select;
-    if (baseType.options.every((option) => typeof option === "string"))
-      options = [...baseType.options];
-    else throw new Error("Enum must be strings only.");
+    enhancedOptions = getEnhancedOptions(zodType);
+
+    fieldType = meta.type === "radio" ? "radio" : "select";
+    placeholder =
+      placeholder ||
+      (meta.type === "radio"
+        ? DEFAULT_PLACEHOLDERS.radio
+        : DEFAULT_PLACEHOLDERS.select);
+
+    if (!enhancedOptions) {
+      if (baseType.options.every((option) => typeof option === "string")) {
+        enhancedOptions = [...baseType.options];
+      } else {
+        throw new Error("Enum must be strings only.");
+      }
+    }
   } else if (zodTypeGuards.string(baseType)) {
     const checks = (baseType.def.checks ?? []) as Array<
       z.core.$ZodCheck<never>
@@ -286,7 +299,7 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     halfWidth: meta.halfWidth || false,
     minLength,
     maxLength,
-    options,
+    enhancedOptions,
     meta,
     fileMaxSize,
     fileMinSize,

@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Flex,
+  RadioCards,
   ScrollArea,
   Select,
   Switch,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/form";
 import { TagInput } from "@/components/ui/tag-input";
 import { FileUpload } from "@/components/ui/file-upload";
+import _ from "lodash";
 
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchemaType;
@@ -186,8 +188,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   };
 
   const renderFormControl = (fieldConfig: FieldConfig) => {
-    const { key, type, placeholder, maxLength, minLength, options, meta } =
-      fieldConfig;
+    const { key, type, placeholder, maxLength, minLength, meta } = fieldConfig;
     const fieldName = key as Path<z.infer<TSchemaType>>;
 
     const isDisabled = evaluateConditional(meta?.disabled, false);
@@ -199,16 +200,17 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
     switch (type) {
       case "file":
-      case "files":
         return (
           <FileUpload
-            value={currentValue as Array<File>}
+            value={
+              currentValue
+                ? ([currentValue] as unknown as Array<File>)
+                : undefined
+            }
             onChange={(files) => {
-              console.log("[files]:", files);
-              const value = isMultiple ? files : files[0] || null;
               form.setValue(
                 fieldName,
-                value as PathValue<
+                files[0] as PathValue<
                   z.output<TSchemaType>,
                   Path<z.output<TSchemaType>>
                 >,
@@ -216,15 +218,53 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
               );
             }}
             multiple={isMultiple}
-            disabled={isDisabled}
+            disabled={currentValue != undefined}
             placeholder={placeholder}
             accept={
               Array.isArray(fieldConfig.fileMime)
                 ? fieldConfig.fileMime.join(",")
                 : fieldConfig.fileMime
             }
-            minFiles={fieldConfig.minLength}
-            maxFiles={fieldConfig.maxLength}
+            minSize={fieldConfig.fileMinSize}
+            maxSize={fieldConfig.fileMaxSize}
+          />
+        );
+      case "files":
+        return (
+          <FileUpload
+            noDuplicates
+            value={
+              currentValue
+                ? Array.isArray(currentValue)
+                  ? currentValue
+                  : ([currentValue] as unknown as Array<File>)
+                : undefined
+            }
+            onChange={(files) => {
+              form.setValue(
+                fieldName,
+                files as PathValue<
+                  z.output<TSchemaType>,
+                  Path<z.output<TSchemaType>>
+                >,
+                { shouldValidate: true }
+              );
+            }}
+            multiple={isMultiple}
+            disabled={
+              fieldConfig.maxLength
+                ? ((form.getValues(fieldName) as Array<File>) || []).length >=
+                  fieldConfig.maxLength
+                : false
+            }
+            placeholder={placeholder}
+            accept={
+              Array.isArray(fieldConfig.fileMime)
+                ? fieldConfig.fileMime.join(",")
+                : fieldConfig.fileMime
+            }
+            // minFiles={fieldConfig.minLength}
+            // maxFiles={fieldConfig.maxLength}
             minSize={fieldConfig.fileMinSize}
             maxSize={fieldConfig.fileMaxSize}
           />
@@ -235,7 +275,10 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           <TextArea
             size={"3"}
             placeholder={placeholder}
-            className={cn("min-h-[80px]", meta?.resize && "resize-y")}
+            className={cn(
+              "min-h-[80px]",
+              meta?.type === "textarea" && meta?.resize && "resize-y"
+            )}
             maxLength={maxLength}
             {...commonProps}
             {...form.register(fieldName)}
@@ -299,6 +342,48 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           />
         );
 
+      case "radio":
+        return (
+          <RadioCards.Root
+            size={"3"}
+            value={String(currentValue)}
+            disabled={isDisabled}
+            onValueChange={(value) => {
+              form.setValue(
+                fieldName,
+                value as PathValue<
+                  z.output<TSchemaType>,
+                  Path<z.output<TSchemaType>>
+                >,
+                { shouldValidate: true }
+              );
+            }}
+          >
+            {fieldConfig.enhancedOptions?.map((option) => {
+              const value = typeof option === "string" ? option : option.value;
+              const label =
+                typeof option === "string"
+                  ? _.startCase(option)
+                  : option.label || _.startCase(option.value);
+              const description =
+                typeof option === "string" ? undefined : option.description;
+
+              return (
+                <RadioCards.Item key={value} value={value}>
+                  <Flex direction="column" width="100%">
+                    <Text weight="bold">{label}</Text>
+                    {description && (
+                      <Text size="2" color="gray">
+                        {description}
+                      </Text>
+                    )}
+                  </Flex>
+                </RadioCards.Item>
+              );
+            })}
+          </RadioCards.Root>
+        );
+
       case "select":
         return (
           <Select.Root
@@ -320,11 +405,20 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             <Select.Content className="z-50">
               <ScrollArea type="auto" style={{ maxHeight: "300px" }}>
                 <Select.Group>
-                  {options?.map((option) => (
-                    <Select.Item key={option} value={option}>
-                      {option}
-                    </Select.Item>
-                  ))}
+                  {fieldConfig.enhancedOptions?.map((option) => {
+                    const value =
+                      typeof option === "string" ? option : option.value;
+                    const label =
+                      typeof option === "string"
+                        ? _.startCase(option)
+                        : option.label || _.startCase(option.value);
+
+                    return (
+                      <Select.Item key={value} value={value}>
+                        {label}
+                      </Select.Item>
+                    );
+                  })}
                 </Select.Group>
               </ScrollArea>
             </Select.Content>
@@ -533,3 +627,5 @@ export namespace AutoForm {
   export type ActionProps = ActionProps_;
   export const Action = Action_;
 }
+
+export { z_ } from "./enhanced-zod";

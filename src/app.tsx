@@ -5,37 +5,14 @@ import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 
 import { cn } from "@/lib/utils";
 
+import { INITIAL_SCHEMA_CODE, INITIAL_SCHEMA_STRING } from "@/schema";
+
 import { AutoForm } from "@/components/auto-form";
 import { CodePreview } from "@/components/code-preview";
-import { MetadataRegistry } from "@/components/auto-form/registry";
-
-const initialSchema = z.object({
-  name: z.string().max(32).min(2),
-  avatar: z
-    .file()
-    .mime("image/gif")
-    .min(1)
-    .max(1024 * 1024),
-  files: z
-    .array(
-      z
-        .file()
-        .mime(["image/jpeg", "image/png"])
-        .min(1)
-        .max(4 * 1024 * 1024)
-    )
-    .min(2)
-    .max(4),
-  names: z.array(z.string()).max(8),
-  url: z.url(),
-  description: z
-    .string()
-    .register(MetadataRegistry, { type: "textarea", resize: true }),
-});
 
 export const App = () => {
   const [currentSchema, setCurrentSchema] =
-    useState<z.ZodObject<z.ZodRawShape>>(initialSchema);
+    useState<z.ZodObject<z.ZodRawShape>>(INITIAL_SCHEMA_CODE);
 
   const handleSchemaChange = (newSchema: z.ZodObject<z.ZodRawShape>) => {
     setCurrentSchema(newSchema);
@@ -53,7 +30,10 @@ export const App = () => {
               validation and customizable field types.
             </Text>
           </Box>
-          <CodePreview onSchemaChange={handleSchemaChange} />
+          <CodePreview
+            defaultCode={INITIAL_SCHEMA_STRING}
+            onSchemaChange={handleSchemaChange}
+          />
           <Box>
             <Heading size="4" mb="3">
               Generated Form

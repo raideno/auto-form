@@ -1,41 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
-
-import { Box, Button, Flex, Heading, Text } from "@radix-ui/themes";
+import Editor from "@monaco-editor/react";
 
 import { z } from "zod/v4";
+import { FileType } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Box, Button, Flex, Heading, Text } from "@radix-ui/themes";
 
 import { MetadataRegistry } from "@/components/auto-form/registry";
 
 interface CodePreviewProps {
+  defaultCode: string;
   onSchemaChange: (schema: z.ZodObject<z.ZodRawShape>) => void;
 }
 
-const DEFAULT_CODE = `z.object({
-  firstName: z.string().max(32).min(2).register(MetadataRegistry, { 
-    halfWidth: true
-  }),
-  lastName: z.string().max(32).min(2).register(MetadataRegistry, { 
-    halfWidth: true
-  }),
-  avatar: z
-    .file()
-    .mime(["image/jpg", "image/jpeg", "image/png", "image/gif"])
-    .min(1)
-    .max(1024 * 1024),
-  tags: z.array(z.string()).max(8),
-  url: z.url(),
-  description: z
-    .string()
-    .register(MetadataRegistry, { 
-      type: "textarea", 
-      resize: true 
-    }),
-});
-`;
-
-export const CodePreview = ({ onSchemaChange }: CodePreviewProps) => {
-  const [code, setCode] = useState(() => {
-    return DEFAULT_CODE;
+export const CodePreview = ({
+  defaultCode,
+  onSchemaChange,
+}: CodePreviewProps) => {
+  const [code, setCode] = useState<string | undefined>(() => {
+    return defaultCode;
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +26,7 @@ export const CodePreview = ({ onSchemaChange }: CodePreviewProps) => {
     (codeString: string) => {
       try {
         const schemaFunction = new Function(
-          "z",
+          "z_",
           "MetadataRegistry",
           `return ${codeString}`
         );
@@ -72,18 +54,17 @@ export const CodePreview = ({ onSchemaChange }: CodePreviewProps) => {
   };
 
   const applyChanges = () => {
-    validateAndUpdateSchema(code);
+    validateAndUpdateSchema(code || "");
   };
 
   const resetToDefault = () => {
-    const defaultCode = DEFAULT_CODE;
     setCode(defaultCode);
     validateAndUpdateSchema(defaultCode);
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      validateAndUpdateSchema(code);
+      validateAndUpdateSchema(code || "");
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -110,19 +91,24 @@ export const CodePreview = ({ onSchemaChange }: CodePreviewProps) => {
 
       <Box className="relative">
         <pre className="bg-gray-50 border border-gray-200 rounded-t-lg p-4 overflow-hidden">
-          <code className="text-sm">
-            <span className="text-blue-600">const</span>{" "}
-            <span className="text-purple-600">Schema</span>{" "}
-            <span className="text-gray-600">=</span>{" "}
+          <code className="text-sm flex flex-row items-center gap-1">
+            <FileType width={16} height={16} className="text-blue-600" />
+            <span className="text-blue-600">app.tsx</span>{" "}
           </code>
         </pre>
 
-        <textarea
+        <Editor
+          options={{
+            minimap: { enabled: false },
+            lineNumbers: "off",
+            glyphMargin: false,
+            folding: false,
+            lineDecorationsWidth: 0,
+          }}
           value={code}
-          onChange={(e) => handleCodeChange(e.target.value)}
+          language="javascript"
+          onChange={(value) => handleCodeChange(value || "")}
           className="w-full h-80 p-4 border-l border-r border-b border-gray-200 rounded-b-lg font-mono text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Enter your Zod schema here..."
-          spellCheck={false}
         />
 
         {error && (

@@ -1,5 +1,3 @@
-// registry.tsx
-
 import { z } from "zod/v4";
 
 // NOTE: moved into here in order to keep @ imports in auto.tsx and still be
@@ -17,26 +15,34 @@ type CommonMetadata = {
   halfWidth?: boolean;
 };
 
-// Only allow file-related props when type is "file" or "files"
 type TextareaMetadata = CommonMetadata & {
   type: "textarea";
   resize?: boolean;
 };
 
-// Forbid file-related props for all other types (or when type is omitted)
+type SelectMetadata = CommonMetadata & {
+  type: "select";
+};
+
+type RadioMetadata = CommonMetadata & {
+  type: "radio";
+};
+
 type ForbidFileProps<T> = T & {
   resize?: never;
 };
 
-// If you want to restrict to a known set of types, replace `string` below
-// with a specific union (e.g., "text" | "textarea" | "switch" | ...).
 type NonFileMetadata = ForbidFileProps<
   CommonMetadata & {
-    type?: Exclude<string, "textarea">;
+    type?: Exclude<string, "textarea" | "select" | "radio">;
   }
 >;
 
-export type FieldMetadata = TextareaMetadata | NonFileMetadata;
+export type FieldMetadata =
+  | TextareaMetadata
+  | SelectMetadata
+  | RadioMetadata
+  | NonFileMetadata;
 
 // NOTE: metadata only applicable to string or number fields
 // https://zod.dev/metadata?id=referencing-inferred-types
