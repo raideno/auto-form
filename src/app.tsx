@@ -1,6 +1,9 @@
 import { z } from "zod/v4";
 import { useState } from "react";
+import { FormInput } from "lucide-react";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
+
+import { cn } from "@/lib/utils";
 
 import { AutoForm } from "@/components/auto-form";
 import { CodePreview } from "@/components/code-preview";
@@ -43,6 +46,7 @@ export const App = () => {
       <div className="max-w-2xl mx-auto py-16 px-4">
         <Flex className="w-full" direction={"column"} gap={"8"}>
           <Box>
+            <Logo className="mb-4" />
             <Heading>Auto Form Generator</Heading>
             <Text>
               Generate forms automatically from Zod schemas with built-in
@@ -82,3 +86,20 @@ export const App = () => {
     </div>
   );
 };
+
+type LogoProps = React.ComponentProps<"div"> & {};
+
+const Logo: React.FC<LogoProps> = ({ className, ...props }) => (
+  <div
+    aria-hidden
+    className={cn(
+      "border border-solid border-white bg-linear-to-b rounded-lg relative flex size-9 translate-y-0.5 items-center justify-center from-[var(--accent-6)] to-[var(--accent-9)] shadow-lg shadow-black/20 ring-1 ring-black/10",
+      className
+    )}
+    {...props}
+  >
+    <FormInput className="mask-b-from-25% size-6 fill-white stroke-white drop-shadow-sm" />
+    <FormInput className="absolute inset-0 m-auto size-6 fill-white stroke-white opacity-65 drop-shadow-sm" />
+    <div className="z-1 h-4.5 absolute inset-2 m-auto w-px translate-y-px rounded-full bg-black/10"></div>
+  </div>
+);
