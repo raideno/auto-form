@@ -1,3 +1,5 @@
+import "./styles.css";
+
 export { AutoForm, z_ } from "../src/components/auto-form";
 export type {
   RenderParams,

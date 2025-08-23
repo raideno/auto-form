@@ -3,11 +3,13 @@ import path from "node:path";
 import { defineConfig } from "vite";
 
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     dts({
       include: [
         "lib/**/*",
@@ -50,10 +52,15 @@ export default defineConfig({
           zod: "Zod",
           "zod/v4": "Zod",
         },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === "style.css") return "index.css";
+          return assetInfo.name || "asset";
+        },
       },
     },
     sourcemap: true,
     emptyOutDir: true,
+    cssCodeSplit: false,
   },
   resolve: {
     alias: {

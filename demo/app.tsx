@@ -1,15 +1,12 @@
 import { z } from "zod/v4";
 import { useState } from "react";
 import { FormInput } from "lucide-react";
+import { AutoForm } from "@raideno/auto-form";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 
-import { cn } from "../src/lib/utils";
-
-import { INITIAL_SCHEMA_CODE, INITIAL_SCHEMA_STRING } from "./schema";
-
-import { AutoForm } from "../src/components/auto-form";
+import { cn } from "./lib/utils";
 import { CodePreview } from "./code-preview";
-import { InputFileUpload } from "../src/components/ui/input-file-upload";
+import { INITIAL_SCHEMA_CODE, INITIAL_SCHEMA_STRING } from "./schema";
 
 export const App = () => {
   const [currentSchema, setCurrentSchema] =
@@ -18,8 +15,6 @@ export const App = () => {
   const handleSchemaChange = (newSchema: z.ZodObject<z.ZodRawShape>) => {
     setCurrentSchema(newSchema);
   };
-
-  const [value, setValue] = useState<File | null>(null);
 
   return (
     <div className="w-screen h-screen">
@@ -37,7 +32,6 @@ export const App = () => {
             defaultCode={INITIAL_SCHEMA_STRING}
             onSchemaChange={handleSchemaChange}
           />
-          <InputFileUpload value={value} onChange={(file) => setValue(file)} />
           <Box>
             <Heading size="4" mb="3">
               Generated Form
