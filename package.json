@@ -1,6 +1,6 @@
 {
   "name": "@raideno/auto-form",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Generate forms automatically from Zod schemas with built-in validation and customizable field types",
   "type": "module",
   "main": "./dist/lib/index.cjs",
@@ -9,18 +9,21 @@
   "exports": {
     "./ui": {
       "types": "./dist/lib/ui.d.ts",
-      "import": "./dist/lib/ui.mjs",
-      "require": "./dist/lib/ui.cjs"
+      "import": "./dist/lib/ui.js",
+      "require": "./dist/lib/ui.cjs",
+      "default": "./dist/lib/ui.js"
     },
     "./registry": {
       "types": "./dist/lib/registry.d.ts",
-      "import": "./dist/lib/registry.mjs",
-      "require": "./dist/lib/registry.cjs"
+      "import": "./dist/lib/registry.js",
+      "require": "./dist/lib/registry.cjs",
+      "default": "./dist/lib/registry.js"
     },
     "./zod": {
       "types": "./dist/lib/zod.d.ts",
-      "import": "./dist/lib/zod.mjs",
-      "require": "./dist/lib/zod.cjs"
+      "import": "./dist/lib/zod.js",
+      "require": "./dist/lib/zod.cjs",
+      "default": "./dist/lib/zod.js"
     },
     "./styles.css": "./dist/lib/auto-form.css"
   },
