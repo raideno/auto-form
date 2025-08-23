@@ -12,6 +12,16 @@
       "import": "./dist/lib/index.mjs",
       "require": "./dist/lib/index.cjs"
     },
+    "./registry": {
+      "types": "./dist/lib/registry.d.ts",
+      "import": "./dist/lib/registry.mjs",
+      "require": "./dist/lib/registry.cjs"
+    },
+    "./zod": {
+      "types": "./dist/lib/zod.d.ts",
+      "import": "./dist/lib/zod.mjs",
+      "require": "./dist/lib/zod.cjs"
+    },
     "./styles.css": "./dist/lib/auto-form.css"
   },
   "files": [
@@ -51,7 +61,7 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/themes": "^3.2.1",
-    "@raideno/auto-form": "^0.0.1",
+    "@raideno/auto-form": "^0.0.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
     "lodash": "^4.17.21",
