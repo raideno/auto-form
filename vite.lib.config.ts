@@ -26,7 +26,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        index: path.resolve(__dirname, "lib/index.ts"),
+        ui: path.resolve(__dirname, "lib/ui.ts"),
         registry: path.resolve(__dirname, "lib/registry.ts"),
         zod: path.resolve(__dirname, "lib/zod.ts"),
       },

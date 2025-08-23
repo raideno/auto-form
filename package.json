@@ -7,10 +7,10 @@
   "module": "./dist/lib/index.mjs",
   "types": "./dist/lib/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/lib/index.d.ts",
-      "import": "./dist/lib/index.mjs",
-      "require": "./dist/lib/index.cjs"
+    "./ui": {
+      "types": "./dist/lib/ui.d.ts",
+      "import": "./dist/lib/ui.mjs",
+      "require": "./dist/lib/ui.cjs"
     },
     "./registry": {
       "types": "./dist/lib/registry.d.ts",
