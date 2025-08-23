@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: install dependencies
+        run: npm ci
+
+      #   - name: run linting
+      #     run: npm run lint
+
+      - name: run type checking
+        run: npm run typecheck
+
+      - name: build library
+        run: npm run build:lib
+
+      - name: build demo
+        run: npm run build:demo

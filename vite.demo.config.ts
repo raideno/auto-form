@@ -8,9 +8,13 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: "/auto-form/",
   plugins: [tailwindcss(), react()],
+  root: "./demo",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    outDir: "../dist/demo",
   },
 });

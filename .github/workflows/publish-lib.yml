@@ -1,0 +1,40 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: install dependencies
+        run: npm ci
+
+      #   - name: run linting
+      #     run: npm run lint
+
+      - name: run type checking
+        run: npm run typecheck
+
+      - name: build library
+        run: npm run build:lib
+
+      - name: publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

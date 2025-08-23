@@ -1,11 +1,13 @@
+// index.tsx
+
 import { useEffect, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
   Badge,
   Button,
   Flex,
   RadioCards,
-  ScrollArea,
   Select,
   Switch,
   Text,
@@ -35,6 +37,7 @@ import {
 import { TagInput } from "@/components/ui/tag-input";
 import { FileUpload } from "@/components/ui/file-upload";
 import _ from "lodash";
+import { InputFileUpload } from "../ui/input-file-upload";
 
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchemaType;
@@ -59,7 +62,6 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   children,
   labels = true,
 }: RootProps_<TSchemaType>) {
-  const [isSubmitLoading, setIsSubmitLoading] = useState<boolean>(false);
   const [isCancelLoading, setIsCancelLoading] = useState<boolean>(false);
 
   if (!zodTypeGuards.object(schema))
@@ -83,41 +85,36 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     }
   }, [form, onChange]);
 
-  const createAsyncHandler =
-    (
-      handler: () => Promise<void> | void,
-      setLoading: (loading: boolean) => void,
-      loadingStates: [boolean, boolean]
-    ) =>
-    async () => {
-      if (loadingStates[0] || loadingStates[1]) return;
-
+  function withLoading<TArgs extends unknown[]>(
+    fn: (...args: TArgs) => Promise<void> | void,
+    setLoading: (loading: boolean) => void,
+    isBlocked: () => boolean
+  ) {
+    return async (...args: TArgs) => {
+      if (isBlocked()) return;
       try {
         setLoading(true);
-        await handler();
+        await fn(...args);
       } catch (error) {
         console.error("[form-error]:", error);
       } finally {
         setLoading(false);
       }
     };
+  }
 
-  const handleSubmitWrapper = createAsyncHandler(
-    () => onSubmit?.(form.getValues()),
-    setIsSubmitLoading,
-    [isSubmitLoading, isCancelLoading]
-  );
+  const handleSubmitWrapper = (values: FormValues) => onSubmit?.(values);
 
   const handleErrorWrapper: SubmitErrorHandler<FormValues> = (errors) => {
     console.log("[form-errors]:", errors);
-    if (isSubmitLoading || isCancelLoading) return;
+    if (form.formState.isSubmitting || isCancelLoading) return;
     onError?.();
   };
 
-  const handleCancelWrapper = createAsyncHandler(
+  const handleCancelWrapper = withLoading(
     () => (onCancel ? onCancel() : form.reset(defaultValues)),
     setIsCancelLoading,
-    [isCancelLoading, isSubmitLoading]
+    () => form.formState.isSubmitting || isCancelLoading
   );
 
   const fields: Array<FieldConfig> = Object.entries(schema.shape).map(
@@ -132,7 +129,6 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         {
           form,
           schema,
-          isSubmitLoading,
           isCancelLoading,
           handleSubmit: handleSubmitWrapper,
           handleCancel: handleCancelWrapper,
@@ -187,6 +183,52 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     return value;
   };
 
+  const createControllerParams = (
+    fieldConfig: FieldConfig,
+    fieldName: Path<z.infer<TSchemaType>>
+  ) => {
+    const set =
+      <N extends Path<z.output<TSchemaType>>>(name: N) =>
+      (
+        value: PathValue<z.output<TSchemaType>, N>,
+        options = { shouldValidate: true as const }
+      ) =>
+        form.setValue(name, value, options);
+
+    const fieldState = form.getFieldState(fieldName);
+    const currentValue = form.watch(fieldName);
+
+    return {
+      fieldConfig,
+      meta: fieldConfig.meta,
+      name: fieldName,
+      control: form.control,
+      defaultValue: form.getValues(fieldName),
+      labels,
+      field: {
+        name: fieldName,
+        value: currentValue,
+        onChange: (value: unknown) =>
+          set(fieldName)(
+            value as PathValue<
+              z.output<TSchemaType>,
+              Path<z.output<TSchemaType>>
+            >
+          ),
+        onBlur: () => form.trigger(fieldName),
+      },
+      fieldState: {
+        invalid: !!fieldState.error,
+        error: fieldState.error,
+      },
+      formState: {
+        isSubmitting: form.formState.isSubmitting,
+        isLoading: form.formState.isLoading,
+      },
+      defaultController: renderFormControl(fieldConfig),
+    };
+  };
+
   const renderFormControl = (fieldConfig: FieldConfig) => {
     const { key, type, placeholder, maxLength, minLength, meta } = fieldConfig;
     const fieldName = key as Path<z.infer<TSchemaType>>;
@@ -201,23 +243,18 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     switch (type) {
       case "file":
         return (
-          <FileUpload
-            value={
-              currentValue
-                ? ([currentValue] as unknown as Array<File>)
-                : undefined
-            }
-            onChange={(files) => {
+          <InputFileUpload
+            value={currentValue ? (currentValue as unknown as File) : undefined}
+            onChange={(file) => {
               form.setValue(
                 fieldName,
-                files[0] as PathValue<
+                file as PathValue<
                   z.output<TSchemaType>,
                   Path<z.output<TSchemaType>>
                 >,
                 { shouldValidate: true }
               );
             }}
-            multiple={isMultiple}
             disabled={currentValue != undefined}
             placeholder={placeholder}
             accept={
@@ -263,8 +300,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                 ? fieldConfig.fileMime.join(",")
                 : fieldConfig.fileMime
             }
-            // minFiles={fieldConfig.minLength}
-            // maxFiles={fieldConfig.maxLength}
             minSize={fieldConfig.fileMinSize}
             maxSize={fieldConfig.fileMaxSize}
           />
@@ -279,6 +314,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
               "min-h-[80px]",
               meta?.type === "textarea" && meta?.resize && "resize-y"
             )}
+            id={String(fieldName)}
             maxLength={maxLength}
             {...commonProps}
             {...form.register(fieldName)}
@@ -293,7 +329,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             minTags={minLength}
             className="space-y-2"
             value={currentTags}
-            defaultValue={currentTags}
             onValueChange={(newTags) => {
               form.setValue(
                 fieldName,
@@ -346,7 +381,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         return (
           <RadioCards.Root
             size={"3"}
-            value={String(currentValue)}
+            value={currentValue == null ? undefined : String(currentValue)}
             disabled={isDisabled}
             onValueChange={(value) => {
               form.setValue(
@@ -388,7 +423,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         return (
           <Select.Root
             size={"3"}
-            value={String(currentValue)}
+            value={currentValue == null ? undefined : String(currentValue)}
             disabled={isDisabled}
             onValueChange={(value) => {
               form.setValue(
@@ -402,26 +437,30 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             }}
           >
             <Select.Trigger className="w-full" placeholder={placeholder} />
-            <Select.Content className="z-50">
-              <ScrollArea type="auto" style={{ maxHeight: "300px" }}>
-                <Select.Group>
-                  {fieldConfig.enhancedOptions?.map((option) => {
-                    const value =
-                      typeof option === "string" ? option : option.value;
-                    const label =
-                      typeof option === "string"
-                        ? _.startCase(option)
-                        : option.label || _.startCase(option.value);
+            <ErrorBoundary
+              FallbackComponent={(props) => {
+                console.log("[select-error]:", props.error);
+                return <></>;
+              }}
+            >
+              <Select.Content className="z-50">
+                {fieldConfig.enhancedOptions?.map((option) => {
+                  console.log("[option]:", option);
+                  const value =
+                    typeof option === "string" ? option : option.value;
+                  const label =
+                    typeof option === "string"
+                      ? _.startCase(option)
+                      : option.label || _.startCase(option.value);
 
-                    return (
-                      <Select.Item key={value} value={value}>
-                        {label}
-                      </Select.Item>
-                    );
-                  })}
-                </Select.Group>
-              </ScrollArea>
-            </Select.Content>
+                  return (
+                    <Select.Item key={value} value={value}>
+                      {label}
+                    </Select.Item>
+                  );
+                })}
+              </Select.Content>
+            </ErrorBoundary>
           </Select.Root>
         );
 
@@ -441,9 +480,15 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             type={type}
             placeholder={placeholder}
             maxLength={maxLength}
+            id={String(fieldName)}
             {...commonProps}
             {...form.register(fieldName, {
-              valueAsNumber: type === "number",
+              ...(type === "number"
+                ? {
+                    setValueAs: (v) =>
+                      v === "" || v == null ? undefined : Number(v),
+                  }
+                : {}),
             })}
           >
             {showCharCount && (
@@ -490,48 +535,115 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             const isHidden = evaluateConditional(meta?.hidden, false);
             if (isHidden) return null;
 
-            const defaultRender = () => (
-              <FormField
-                key={key}
-                control={form.control}
-                name={fieldName}
-                render={() => (
-                  <FormItem className="w-full flex flex-col">
-                    {type === "switch" ? (
-                      <div className="flex flex-row items-center justify-between space-x-3 py-4">
-                        {labels && (
-                          <Flex direction={"column"} gap={"1"}>
+            const defaultRender = () => {
+              return (
+                <FormField
+                  key={key}
+                  control={form.control}
+                  name={fieldName}
+                  render={() => (
+                    <FormItem className="w-full flex flex-col">
+                      {type === "switch" ? (
+                        <div className="flex flex-row items-center justify-between space-x-3 py-4">
+                          {labels && (
+                            <Flex direction={"column"} gap={"1"}>
+                              <FormLabel htmlFor={key}>{label}</FormLabel>
+                              {meta?.description && (
+                                <Text size="2" color="gray">
+                                  {meta.description}
+                                </Text>
+                              )}
+                            </Flex>
+                          )}
+                          <FormControl>
+                            {meta?.controller
+                              ? meta.controller(
+                                  createControllerParams(fieldConfig, fieldName)
+                                )
+                              : renderFormControl(fieldConfig)}
+                          </FormControl>
+                        </div>
+                      ) : (
+                        <>
+                          {labels && (
                             <FormLabel htmlFor={key}>{label}</FormLabel>
-                            {meta?.description && (
-                              <Text size="2" color="gray">
-                                {meta.description}
-                              </Text>
-                            )}
-                          </Flex>
-                        )}
-                        <FormControl>
-                          {renderFormControl(fieldConfig)}
-                        </FormControl>
-                      </div>
-                    ) : (
-                      <>
-                        {labels && <FormLabel htmlFor={key}>{label}</FormLabel>}
-                        <FormControl>
-                          {renderFormControl(fieldConfig)}
-                        </FormControl>
-                        {meta?.description && (
-                          <Text size="2" color="gray">
-                            {meta.description}
-                          </Text>
-                        )}
-                      </>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            );
+                          )}
+                          <ErrorBoundary
+                            FallbackComponent={(props) => {
+                              console.log("[field-error]:", props.error);
+                              return (
+                                <div>Failed to load field controller.</div>
+                              );
+                            }}
+                          >
+                            <FormControl>
+                              {meta?.controller
+                                ? meta.controller(
+                                    createControllerParams(
+                                      fieldConfig,
+                                      fieldName
+                                    )
+                                  )
+                                : renderFormControl(fieldConfig)}
+                            </FormControl>
+                          </ErrorBoundary>
+                          {meta?.description && (
+                            <Text size="2" color="gray">
+                              {meta.description}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              );
+            };
 
+            // If a custom renderer is provided, pass the controller and default render to it
+            if (meta?.renderer) {
+              const fieldState = form.getFieldState(fieldName);
+              const currentValue = form.watch(fieldName);
+
+              // Generate the controller component (either custom or default)
+              const controllerComponent = meta?.controller
+                ? meta.controller(
+                    createControllerParams(fieldConfig, fieldName)
+                  )
+                : renderFormControl(fieldConfig);
+
+              return meta.renderer({
+                fieldConfig,
+                meta,
+                field: {
+                  name: fieldName,
+                  value: currentValue,
+                  onChange: (value: unknown) => {
+                    form.setValue(
+                      fieldName,
+                      value as PathValue<
+                        z.output<TSchemaType>,
+                        Path<z.output<TSchemaType>>
+                      >,
+                      { shouldValidate: true }
+                    );
+                  },
+                  onBlur: () => form.trigger(fieldName),
+                },
+                fieldState: {
+                  invalid: !!fieldState.error,
+                  error: fieldState.error,
+                },
+                formState: {
+                  isSubmitting: form.formState.isSubmitting,
+                  isLoading: form.formState.isLoading,
+                },
+                labels,
+                controller: controllerComponent,
+                defaultRender,
+              });
+            }
             return renderField
               ? renderField({
                   field: fieldConfig,
@@ -572,20 +684,20 @@ interface ActionProps_
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-function Action_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
+function Action_({
   type = "button",
   className,
   children,
   onClick,
   ...props
 }: ActionProps_) {
-  const { handleCancel, isSubmitLoading, isCancelLoading } =
-    useAutoForm<TSchemaType>();
+  const { handleCancel, isCancelLoading, form } =
+    useAutoForm<z.ZodObject<z.ZodRawShape>>();
 
   const isLoading =
-    (type === "submit" && isSubmitLoading) ||
+    (type === "submit" && form.formState.isSubmitting) ||
     (type === "reset" && isCancelLoading);
-  const isDisabled = isSubmitLoading || isCancelLoading;
+  const isDisabled = form.formState.isSubmitting || isCancelLoading;
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (isDisabled) {
@@ -629,3 +741,8 @@ export namespace AutoForm {
 }
 
 export { z_ } from "./enhanced-zod";
+export type {
+  RenderParams,
+  ControllerParams,
+  ControllerRenderProps,
+} from "./registry";

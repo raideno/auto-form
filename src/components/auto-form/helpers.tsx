@@ -1,4 +1,6 @@
-import _ from "lodash";
+// helpers.tsx
+
+import { startCase } from "lodash";
 import z from "zod/v4";
 
 import { MetadataRegistry } from "./registry";
@@ -160,9 +162,13 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     throw new Error(`Expected ZodType for key "${key}", got ${typeof zodType}`);
   }
 
-  const meta =
-    MetadataRegistry.get(zodType) || ({ resize: false } as FieldMetadata);
-  const label = meta.label || _.startCase(key);
+  const meta = (MetadataRegistry.get(zodType) || {
+    resize: false,
+  }) as FieldMetadata;
+
+  console.debug("[meta]:", key, meta);
+
+  const label = meta.label || startCase(key);
   const baseType = unwrapZodType(zodType);
 
   let fieldType = meta.type || "text";
@@ -283,6 +289,9 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
   } else if (zodTypeGuards.number(baseType)) {
     fieldType = "number";
     placeholder = placeholder || DEFAULT_PLACEHOLDERS.number;
+  } else {
+    console.error(`Unsupported Zod type for key "${key}":`, zodType);
+    throw new Error("Unsupported Zod type");
   }
 
   if (!meta.placeholder) {

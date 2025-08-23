@@ -5,7 +5,7 @@ import { FileType } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Box, Button, Flex, Heading, Text } from "@radix-ui/themes";
 
-import { MetadataRegistry } from "@/components/auto-form/registry";
+import { MetadataRegistry } from "../src/components/auto-form/registry";
 
 interface CodePreviewProps {
   defaultCode: string;
