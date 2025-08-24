@@ -30,7 +30,8 @@ export default defineConfig({
         registry: path.resolve(__dirname, "lib/registry.ts"),
         zod: path.resolve(__dirname, "lib/zod.ts"),
       },
-      formats: ["es", "cjs"],
+      // formats: ["es", "cjs"],
+      formats: ["es"],
     },
     outDir: "dist/lib",
     rollupOptions: {

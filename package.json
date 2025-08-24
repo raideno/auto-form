@@ -3,26 +3,20 @@
   "version": "0.0.9",
   "description": "Generate forms automatically from Zod schemas with built-in validation and customizable field types",
   "type": "module",
-  "main": "./dist/lib/index.cjs",
-  "module": "./dist/lib/index.mjs",
-  "types": "./dist/lib/index.d.ts",
   "exports": {
     "./ui": {
       "types": "./dist/lib/ui.d.ts",
       "import": "./dist/lib/ui.js",
-      "require": "./dist/lib/ui.cjs",
       "default": "./dist/lib/ui.js"
     },
     "./registry": {
       "types": "./dist/lib/registry.d.ts",
       "import": "./dist/lib/registry.js",
-      "require": "./dist/lib/registry.cjs",
       "default": "./dist/lib/registry.js"
     },
     "./zod": {
       "types": "./dist/lib/zod.d.ts",
       "import": "./dist/lib/zod.js",
-      "require": "./dist/lib/zod.cjs",
       "default": "./dist/lib/zod.js"
     },
     "./styles.css": "./dist/lib/auto-form.css"
