@@ -1,6 +1,6 @@
 // helpers.tsx
 
-import { startCase } from "lodash";
+import startCase from "lodash-es/startCase";
 import z from "zod/v4";
 
 import { MetadataRegistry } from "./registry";

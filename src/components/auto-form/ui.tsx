@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/form";
 import { TagInput } from "@/components/ui/tag-input";
 import { FileUpload } from "@/components/ui/file-upload";
-import _ from "lodash";
+import startCase from "lodash-es/startCase";
+
 import { InputFileUpload } from "../ui/input-file-upload";
 
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
@@ -397,8 +398,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
               const value = typeof option === "string" ? option : option.value;
               const label =
                 typeof option === "string"
-                  ? _.startCase(option)
-                  : option.label || _.startCase(option.value);
+                  ? startCase(option)
+                  : option.label || startCase(option.value);
               const description =
                 typeof option === "string" ? undefined : option.description;
 
@@ -449,8 +450,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                     typeof option === "string" ? option : option.value;
                   const label =
                     typeof option === "string"
-                      ? _.startCase(option)
-                      : option.label || _.startCase(option.value);
+                      ? startCase(option)
+                      : option.label || startCase(option.value);
 
                   return (
                     <Select.Item key={value} value={value}>
