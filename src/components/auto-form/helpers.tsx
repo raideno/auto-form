@@ -246,7 +246,12 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
       minLength = getNumericConstraint(checks, "min_length")?.value;
       maxLength = getNumericConstraint(checks, "max_length")?.value;
     } else {
-      throw new Error("Only string and file arrays are supported.");
+      // throw new Error("Only string and file arrays are supported.");
+      console.error(
+        `Only string and file arrays are supported. "${key}":`,
+        zodType
+      );
+      fieldType = "unsupported";
     }
   } else if (zodTypeGuards.file(baseType)) {
     fileMinSize = baseType._zod.bag.minimum;
@@ -347,7 +352,8 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     }
   } else {
     console.error(`Unsupported Zod type for key "${key}":`, zodType);
-    throw new Error("Unsupported Zod type");
+    // throw new Error("Unsupported Zod type");
+    fieldType = "unsupported";
   }
 
   if (!meta.placeholder) {

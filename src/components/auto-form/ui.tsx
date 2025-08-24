@@ -595,6 +595,9 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         );
       }
 
+      case "unknown":
+        return <div>Unsupported field type. Use a custom controller.</div>;
+
       default:
         console.warn(
           `AutoForm: Unsupported field type "${type}" for key "${key}". Rendering default text input.`
