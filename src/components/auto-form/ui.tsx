@@ -23,7 +23,7 @@ import type { ButtonProps } from "@radix-ui/themes";
 import type { AutoFormContextValue, FieldConfig } from "./context";
 
 import { AutoFormContext, useAutoForm } from "./context";
-import { getFieldType, groupFields, zodTypeGuards } from "./helpers";
+import { getFieldType, groupFields, startCase, zodTypeGuards } from "./helpers";
 
 import { cn } from "@/lib/utils";
 import {
@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/form";
 import { TagInput } from "@/components/ui/tag-input";
 import { FileUpload } from "@/components/ui/file-upload";
-import startCase from "lodash-es/startCase";
 
 import { InputFileUpload } from "../ui/input-file-upload";
 
@@ -107,7 +106,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   const handleSubmitWrapper = (values: FormValues) => onSubmit?.(values);
 
   const handleErrorWrapper: SubmitErrorHandler<FormValues> = (errors) => {
-    console.log("[form-errors]:", errors);
+    console.error("[form-errors]:", errors);
     if (form.formState.isSubmitting || isCancelLoading) return;
     onError?.();
   };
@@ -439,13 +438,12 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             <Select.Trigger className="w-full" placeholder={placeholder} />
             <ErrorBoundary
               FallbackComponent={(props) => {
-                console.log("[select-error]:", props.error);
+                console.error("[select-error]:", props.error);
                 return <></>;
               }}
             >
               <Select.Content className="z-50">
                 {fieldConfig.enhancedOptions?.map((option) => {
-                  console.log("[option]:", option);
                   const value =
                     typeof option === "string" ? option : option.value;
                   const label =
@@ -570,7 +568,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                           )}
                           <ErrorBoundary
                             FallbackComponent={(props) => {
-                              console.log("[field-error]:", props.error);
+                              console.error("[field-error]:", props.error);
                               return (
                                 <div>Failed to load field controller.</div>
                               );
@@ -663,17 +661,8 @@ interface ActionsProps_ {
   children: React.ReactNode;
 }
 
-function Actions_({ className = "", children }: ActionsProps_) {
-  return (
-    <div
-      className={cn(
-        "w-full flex flex-row items-center justify-end gap-3",
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
+function Actions_({ className, children }: ActionsProps_) {
+  return <div className={cn(className)}>{children}</div>;
 }
 
 interface ActionProps_

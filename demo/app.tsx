@@ -30,7 +30,7 @@ export const App = () => {
               schema={INITIAL_SCHEMA_CODE}
             >
               <AutoForm.Content />
-              <AutoForm.Actions className="pt-4 flex flex-col w-full">
+              <AutoForm.Actions className="mt-4 flex !flex-col w-full gap-2">
                 <AutoForm.Action
                   className="!w-full"
                   variant="soft"

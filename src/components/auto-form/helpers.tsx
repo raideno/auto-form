@@ -1,6 +1,5 @@
 // helpers.tsx
 
-import startCase from "lodash-es/startCase";
 import z from "zod/v4";
 
 import { MetadataRegistry } from "./registry";
@@ -8,6 +7,20 @@ import { getEnhancedOptions } from "./enhanced-zod";
 
 import type { FieldMetadata } from "./registry";
 import type { FieldConfig, FieldGroup } from "./context";
+
+export function startCase(str: string): string {
+  return (
+    str
+      .replace(/[_-]+/g, " ")
+      // NOTE: split camelCase
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ")
+  );
+}
 
 type ZodUnionTuple = readonly [z.ZodTypeAny, ...z.ZodTypeAny[]];
 
@@ -165,8 +178,6 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
   const meta = (MetadataRegistry.get(zodType) || {
     resize: false,
   }) as FieldMetadata;
-
-  console.debug("[meta]:", key, meta);
 
   const label = meta.label || startCase(key);
   const baseType = unwrapZodType(zodType);

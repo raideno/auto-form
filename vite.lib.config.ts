@@ -1,8 +1,10 @@
-// vite.config.lib.ts
 import path from "node:path";
+
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+
 import dts from "vite-plugin-dts";
+import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
   plugins: [
@@ -45,9 +47,17 @@ export default defineConfig({
         "@radix-ui/react-label",
         "@radix-ui/themes",
         "framer-motion",
-        "lodash-es",
         "lucide-react",
         "react-error-boundary",
+      ],
+      treeshake: true,
+      plugins: [
+        visualizer({
+          filename: "stats.local.html",
+          gzipSize: true,
+          brotliSize: true,
+          open: true,
+        }),
       ],
     },
     sourcemap: false,
