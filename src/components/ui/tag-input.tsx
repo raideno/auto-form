@@ -26,7 +26,7 @@ const useTagInputContext = () => {
   return context;
 };
 
-type TagInputRootProps = BoxProps & {
+export type TagInputRootProps = BoxProps & {
   value?: Array<string>;
   defaultValue?: Array<string>;
   onValueChange?: (tags: Array<string>) => void;
@@ -101,7 +101,7 @@ const TagInputRoot = forwardRef<HTMLDivElement, TagInputRootProps>(
 
 TagInputRoot.displayName = "TagInput.Root";
 
-interface TagInputInputProps
+export interface TagInputInputProps
   extends Omit<TextField.RootProps, "value" | "onChange"> {
   placeholder?: string;
   children?: React.ReactNode;
@@ -173,7 +173,7 @@ const TagInputInput = forwardRef<HTMLInputElement, TagInputInputProps>(
 
 TagInputInput.displayName = "TagInput.Input";
 
-interface TagInputSlotProps extends TextField.SlotProps {}
+export interface TagInputSlotProps extends TextField.SlotProps {}
 
 const TagInputSlot = forwardRef<HTMLDivElement, TagInputSlotProps>(
   (props, ref) => {
@@ -183,7 +183,7 @@ const TagInputSlot = forwardRef<HTMLDivElement, TagInputSlotProps>(
 
 TagInputSlot.displayName = "TagInput.Slot";
 
-type TagInputTagsProps = BoxProps & {
+export type TagInputTagsProps = BoxProps & {
   onTagRemove?: (tag: string, index: number) => void;
   renderTag?: (tag: string, index: number) => React.ReactNode;
 };

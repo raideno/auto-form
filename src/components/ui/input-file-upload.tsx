@@ -72,7 +72,7 @@ const ImageThumbnail = ({
   );
 };
 
-interface InputFileUploadProps {
+export interface InputFileUploadProps {
   value?: File | null;
   onChange: (file: File | null) => void;
   accept?: string;

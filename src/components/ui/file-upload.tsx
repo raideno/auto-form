@@ -85,7 +85,7 @@ const ImageThumbnail = ({
   );
 };
 
-interface FileUploadProps {
+export interface FileUploadProps {
   value?: Array<File>;
   onChange: (files: Array<File>) => void;
   multiple?: boolean;
