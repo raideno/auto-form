@@ -6,6 +6,72 @@ import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
+const isImageFile = (file: File): boolean => {
+  return file.type.startsWith("image/");
+};
+
+const createImagePreview = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+const ImageThumbnail = ({
+  file,
+  onClick,
+}: {
+  file: File;
+  onClick: () => void;
+}) => {
+  const [thumbnail, setThumbnail] = useState<string>("");
+
+  React.useEffect(() => {
+    if (isImageFile(file)) {
+      createImagePreview(file).then(setThumbnail);
+    }
+  }, [file]);
+
+  if (!isImageFile(file)) {
+    return (
+      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
+        <FileIcon color="gray" className="w-4 h-4" />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: 2 }}
+      whileTap={{ scale: 0.9 }}
+      className="cursor-pointer rounded overflow-hidden border border-gray-200"
+      onClick={onClick}
+      transition={{ duration: 0.2 }}
+    >
+      {thumbnail ? (
+        <img
+          src={thumbnail}
+          alt={file.name}
+          className="w-8 h-8 object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
+          <FileIcon color="gray" className="w-4 h-4" />
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 interface InputFileUploadProps {
   value?: File | null;
   onChange: (file: File | null) => void;
@@ -34,18 +100,6 @@ export function InputFileUpload({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  const isImageFile = (file: File): boolean => {
-    return file.type.startsWith("image/");
-  };
-
-  const createImagePreview = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImagePreview = async (file: File) => {
     if (isImageFile(file)) {
       setIsPreviewLoading(true);
@@ -57,60 +111,6 @@ export function InputFileUpload({
         setIsPreviewLoading(false);
       }
     }
-  };
-
-  const ImageThumbnail = ({
-    file,
-    onClick,
-  }: {
-    file: File;
-    onClick: () => void;
-  }) => {
-    const [thumbnail, setThumbnail] = useState<string>("");
-
-    React.useEffect(() => {
-      if (isImageFile(file)) {
-        createImagePreview(file).then(setThumbnail);
-      }
-    }, [file]);
-
-    if (!isImageFile(file)) {
-      return (
-        <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
-          <FileIcon color="gray" className="w-4 h-4" />
-        </div>
-      );
-    }
-
-    return (
-      <motion.div
-        whileHover={{ scale: 1.1, rotate: 2 }}
-        whileTap={{ scale: 0.9 }}
-        className="cursor-pointer rounded overflow-hidden border border-gray-200"
-        onClick={onClick}
-        transition={{ duration: 0.2 }}
-      >
-        {thumbnail ? (
-          <img
-            src={thumbnail}
-            alt={file.name}
-            className="w-8 h-8 object-cover flex-shrink-0"
-          />
-        ) : (
-          <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-            <FileIcon color="gray" className="w-4 h-4" />
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const validateFile = (file: File): { valid: boolean; error?: string } => {
@@ -193,7 +193,6 @@ export function InputFileUpload({
     }
   };
 
-  // If we have a file, show it as a file list item with the same styling
   if (value) {
     return (
       <div className={cn("w-full", className)}>
@@ -201,7 +200,7 @@ export function InputFileUpload({
           initial={{ opacity: 0, scale: 0.95, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]"
+          className="h-15 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]"
         >
           <div className="flex items-center space-x-3 flex-1 min-w-0">
             <ImageThumbnail
@@ -312,16 +311,14 @@ export function InputFileUpload({
     );
   }
 
-  // If no file, show the upload input area
   return (
     <div className={cn("w-full", className)}>
-      {/* Upload Area */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          "h-15 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]",
           dragActive && !disabled
             ? "border-blue-400 bg-blue-50"
             : "border-gray-300 bg-gray-50",
@@ -342,22 +339,17 @@ export function InputFileUpload({
           disabled={disabled}
           className="hidden"
         />
-
-        <div className="flex flex-col items-center space-y-2">
-          <UploadIcon className="w-8 h-8 text-gray-400" />
-          <div>
-            <Text size="3" className="font-medium text-gray-700">
-              {placeholder}
-            </Text>
-            <Text size="2" color="gray" className="block mt-1">
-              {accept ? `Accepted: ${accept}` : "All file types accepted"} • Min{" "}
-              {formatFileSize(minSize)} • Max {formatFileSize(maxSize)}
-            </Text>
-          </div>
+        <div className="w-full flex flex-row items-center gap-2">
+          <UploadIcon width={20} height={20} color="gray" />
+          <Text size="3" className="font-medium text-gray-700">
+            {placeholder}
+          </Text>
+          <Text size="2" color="gray" className="block mt-1">
+            {accept ? `Accepted: ${accept}` : "All file types accepted"} • Min{" "}
+            {formatFileSize(minSize)} • Max {formatFileSize(maxSize)}
+          </Text>
         </div>
       </motion.div>
-
-      {/* Error Message */}
       {error && (
         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
           {error}

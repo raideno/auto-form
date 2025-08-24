@@ -2,7 +2,7 @@
 
 import "./styles.css";
 
-export { AutoForm, z_ } from "../src/components/auto-form";
+export { AutoForm } from "../src/components/auto-form/ui";
 export { useAutoForm } from "../src/components/auto-form/context";
 
 export type {

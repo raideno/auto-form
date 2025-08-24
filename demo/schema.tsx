@@ -1,8 +1,9 @@
-import { z_ } from "../src/components/auto-form";
+import { z_ } from "../src/components/auto-form/enhanced-zod";
 import { MetadataRegistry } from "../src/components/auto-form/registry";
 
 export const INITIAL_SCHEMA_CODE = z_.object({
   name: z_.string().max(32).min(2),
+  avatar: z_.file(),
   images: z_
     .array(
       z_
@@ -28,7 +29,7 @@ export const INITIAL_SCHEMA_CODE = z_.object({
     .register(MetadataRegistry, {
       label: "Rating",
       description: "Rate this item from 1 to 5 stars",
-      controller: ({ field, fieldConfig, formState, defaultController }) => {
+      controller: ({ field, formState, defaultController }) => {
         // Can access all field configuration and state
         const currentRating = (field.value as number) || 0;
 
@@ -66,11 +67,6 @@ export const INITIAL_SCHEMA_CODE = z_.object({
                   ★
                 </button>
               ))}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Current rating: {currentRating} / 5
-              {fieldConfig.minLength && ` (min: ${fieldConfig.minLength})`}
-              {fieldConfig.maxLength && ` (max: ${fieldConfig.maxLength})`}
             </div>
           </div>
         );

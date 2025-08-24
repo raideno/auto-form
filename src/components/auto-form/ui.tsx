@@ -269,7 +269,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       case "files":
         return (
           <FileUpload
-            noDuplicates
             value={
               currentValue
                 ? Array.isArray(currentValue)
@@ -739,10 +738,3 @@ export namespace AutoForm {
   export type ActionProps = ActionProps_;
   export const Action = Action_;
 }
-
-export { z_ } from "./enhanced-zod";
-export type {
-  RenderParams,
-  ControllerParams,
-  ControllerRenderProps,
-} from "./registry";

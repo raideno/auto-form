@@ -1,7 +1,5 @@
-import { z } from "zod/v4";
-import { useState } from "react";
 import { FormInput } from "lucide-react";
-import { AutoForm } from "@raideno/auto-form";
+import { AutoForm } from "../src/components/auto-form/ui";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 
 import { cn } from "./lib/utils";
@@ -9,13 +7,6 @@ import { CodePreview } from "./code-preview";
 import { INITIAL_SCHEMA_CODE, INITIAL_SCHEMA_STRING } from "./schema";
 
 export const App = () => {
-  const [currentSchema, setCurrentSchema] =
-    useState<z.ZodObject<z.ZodRawShape>>(INITIAL_SCHEMA_CODE);
-
-  const handleSchemaChange = (newSchema: z.ZodObject<z.ZodRawShape>) => {
-    setCurrentSchema(newSchema);
-  };
-
   return (
     <div className="w-screen h-screen">
       <div className="max-w-2xl mx-auto py-16 px-4">
@@ -28,17 +19,15 @@ export const App = () => {
               validation and customizable field types.
             </Text>
           </Box>
-          <CodePreview
-            defaultCode={INITIAL_SCHEMA_STRING}
-            onSchemaChange={handleSchemaChange}
-          />
+          <CodePreview code={INITIAL_SCHEMA_STRING} />
           <Box>
             <Heading size="4" mb="3">
               Generated Form
             </Heading>
             <AutoForm.Root
               onError={() => console.log("[error]:")}
-              schema={currentSchema}
+              onSubmit={(data) => console.log("[submit]:", data)}
+              schema={INITIAL_SCHEMA_CODE}
             >
               <AutoForm.Content />
               <AutoForm.Actions className="pt-4 flex flex-col w-full">

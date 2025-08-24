@@ -6,6 +6,85 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+const isImageFile = (file: File): boolean => {
+  return file.type.startsWith("image/");
+};
+
+const createImagePreview = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+};
+
+const mimeToExt = (mime: string): string => {
+  if (!mime) return "bin";
+  const mapping: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "application/pdf": "pdf",
+  };
+  return mapping[mime] || mime.split("/")[1] || "bin";
+};
+
+const ImageThumbnail = ({
+  file,
+  onClick,
+}: {
+  file: File;
+  onClick: () => void;
+}) => {
+  const [thumbnail, setThumbnail] = useState<string>("");
+
+  React.useEffect(() => {
+    if (isImageFile(file)) {
+      createImagePreview(file).then(setThumbnail);
+    }
+  }, [file]);
+
+  if (!isImageFile(file)) {
+    return (
+      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
+        <FileIcon color="gray" className="w-4 h-4" />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: 2 }}
+      whileTap={{ scale: 0.9 }}
+      className="cursor-pointer rounded overflow-hidden border border-gray-200"
+      onClick={onClick}
+      transition={{ duration: 0.2 }}
+    >
+      {thumbnail ? (
+        <img
+          src={thumbnail}
+          alt={file.name}
+          className="w-8 h-8 object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
+          <FileIcon color="gray" className="w-4 h-4" />
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 interface FileUploadProps {
   value?: Array<File>;
   onChange: (files: Array<File>) => void;
@@ -16,7 +95,6 @@ interface FileUploadProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
-  noDuplicates?: boolean;
 }
 
 export function FileUpload({
@@ -28,26 +106,14 @@ export function FileUpload({
   disabled = false,
   placeholder = "Choose file(s) or drag and drop",
   className,
-  noDuplicates = false,
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string>("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-
-  const isImageFile = (file: File): boolean => {
-    return file.type.startsWith("image/");
-  };
-
-  const createImagePreview = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleImagePreview = async (file: File) => {
     if (isImageFile(file)) {
@@ -62,66 +128,10 @@ export function FileUpload({
     }
   };
 
-  const ImageThumbnail = ({
-    file,
-    onClick,
-  }: {
-    file: File;
-    onClick: () => void;
-  }) => {
-    const [thumbnail, setThumbnail] = useState<string>("");
-
-    React.useEffect(() => {
-      if (isImageFile(file)) {
-        createImagePreview(file).then(setThumbnail);
-      }
-    }, [file]);
-
-    if (!isImageFile(file)) {
-      return (
-        <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
-          <FileIcon color="gray" className="w-4 h-4" />
-        </div>
-      );
-    }
-
-    return (
-      <motion.div
-        whileHover={{ scale: 1.1, rotate: 2 }}
-        whileTap={{ scale: 0.9 }}
-        className="cursor-pointer rounded overflow-hidden border border-gray-200"
-        onClick={onClick}
-        transition={{ duration: 0.2 }}
-      >
-        {thumbnail ? (
-          <img
-            src={thumbnail}
-            alt={file.name}
-            className="w-8 h-8 object-cover flex-shrink-0"
-          />
-        ) : (
-          <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-            <FileIcon color="gray" className="w-4 h-4" />
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
   const isDuplicateFile = (
     newFile: File,
     existingFiles: Array<File>
   ): boolean => {
-    if (!noDuplicates) return false;
-
     return existingFiles.some(
       (existingFile) =>
         existingFile.name === newFile.name &&
@@ -131,7 +141,7 @@ export function FileUpload({
   };
 
   const validateFiles = (
-    files: FileList
+    files: FileList | Array<File>
   ): { valid: Array<File>; errors: Array<string> } => {
     const validFiles: Array<File> = [];
     const errors: Array<string> = [];
@@ -162,11 +172,8 @@ export function FileUpload({
     return { valid: validFiles, errors };
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("change");
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
+  // Single path to process files regardless of source (input, drop, paste)
+  const processFiles = (files: FileList | Array<File>) => {
     const { valid, errors } = validateFiles(files);
 
     if (errors.length > 0) {
@@ -179,6 +186,26 @@ export function FileUpload({
       onChange(newFiles);
       setError("");
     }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // const { valid, errors } = validateFiles(files);
+
+    // if (errors.length > 0) {
+    //   setError(errors[0]);
+    //   setTimeout(() => setError(""), 3000);
+    // }
+
+    // if (valid.length > 0) {
+    //   const newFiles = [...value, ...valid];
+    //   onChange(newFiles);
+    //   setError("");
+    // }
+
+    processFiles(files);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -205,20 +232,96 @@ export function FileUpload({
     const files = e.dataTransfer.files;
     if (files.length === 0) return;
 
-    const { valid, errors } = validateFiles(files);
+    processFiles(files);
+  };
 
-    console.log("[valid,value]:", valid, value);
+  // Handle CtrlV anywhere on the page (except when typing in inputs)
+  React.useEffect(() => {
+    const onWindowPaste = (e: ClipboardEvent) => {
+      if (disabled) return;
 
-    if (errors.length > 0) {
-      setError(errors[0]);
-      setTimeout(() => setError(""), 3000);
+      const active = document.activeElement as HTMLElement | null;
+      if (
+        active &&
+        (active.tagName === "INPUT" ||
+          active.tagName === "TEXTAREA" ||
+          active.isContentEditable)
+      ) {
+        // Let normal text paste happen in editable controls
+        return;
+      }
+
+      const dt = e.clipboardData;
+      if (!dt) return;
+
+      const files: File[] = [];
+
+      if (dt.files && dt.files.length > 0) {
+        files.push(...Array.from(dt.files));
+      } else if (dt.items && dt.items.length > 0) {
+        for (const item of Array.from(dt.items)) {
+          if (item.kind === "file") {
+            const f = item.getAsFile?.();
+            if (f) {
+              const needsName = !f.name || f.name.trim().length === 0;
+              const name = needsName
+                ? `pasted-${Date.now()}.${mimeToExt(f.type)}`
+                : f.name;
+              files.push(
+                needsName
+                  ? new File([f], name, {
+                      type: f.type,
+                      lastModified: Date.now(),
+                    })
+                  : f
+              );
+            }
+          }
+        }
+      }
+
+      if (files.length > 0) {
+        e.preventDefault();
+        processFiles(files); // reuse your existing flow
+      }
+    };
+
+    window.addEventListener("paste", onWindowPaste);
+    return () => window.removeEventListener("paste", onWindowPaste);
+  }, [disabled, value, onChange]);
+
+  // Handle Ctrl+V paste of files/images as if dropped
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    const dt = e.clipboardData;
+    const pastedFiles: File[] = [];
+
+    if (dt.files && dt.files.length > 0) {
+      pastedFiles.push(...Array.from(dt.files));
+    } else if (dt.items && dt.items.length > 0) {
+      for (const item of Array.from(dt.items)) {
+        if (item.kind === "file") {
+          const file = item.getAsFile?.();
+          if (file) {
+            const needsName = !file.name || file.name.trim().length === 0;
+            const name = needsName
+              ? `pasted-${Date.now()}.${mimeToExt(file.type)}`
+              : file.name;
+            const finalized = needsName
+              ? new File([file], name, {
+                  type: file.type,
+                  lastModified: Date.now(),
+                })
+              : file;
+            pastedFiles.push(finalized);
+          }
+        }
+      }
     }
 
-    if (valid.length > 0) {
-      const newFiles = [...value, ...valid];
-      console.log("[newFiles]:", newFiles);
-      onChange(newFiles);
-      setError("");
+    if (pastedFiles.length > 0) {
+      e.preventDefault();
+      processFiles(pastedFiles);
     }
   };
 
@@ -294,6 +397,8 @@ export function FileUpload({
           disabled && "opacity-50 cursor-not-allowed",
           !disabled && "hover:border-gray-400 cursor-pointer"
         )}
+        tabIndex={0}
+        onPaste={handlePaste}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}

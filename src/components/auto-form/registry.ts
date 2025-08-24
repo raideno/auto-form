@@ -8,9 +8,11 @@ import type { EnumOption } from "./enhanced-zod";
 // NOTE: moved into here in order to keep @ imports in auto.tsx and still be
 // able to import registry at build time as @ imports aren't resolved yet
 
-type Values = Record<string, unknown>;
+export type Values = Record<string, unknown>;
 
-type ControllerRenderProps<TFieldValues extends FieldValues = FieldValues> = {
+export type ControllerRenderProps<
+  TFieldValues extends FieldValues = FieldValues
+> = {
   field: {
     name: FieldPath<TFieldValues>;
     value: unknown;
@@ -27,7 +29,7 @@ type ControllerRenderProps<TFieldValues extends FieldValues = FieldValues> = {
   };
 };
 
-type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
+export type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
   fieldConfig: {
     key: string;
     type: string;
@@ -62,7 +64,7 @@ type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
   defaultRender: () => React.ReactNode;
 };
 
-type ControllerParams<TFieldValues extends FieldValues = FieldValues> = {
+export type ControllerParams<TFieldValues extends FieldValues = FieldValues> = {
   fieldConfig: {
     key: string;
     type: string;
@@ -117,24 +119,24 @@ export type CommonMetadata = {
   ) => React.ReactNode;
 };
 
-type TextareaMetadata = CommonMetadata & {
+export type TextareaMetadata = CommonMetadata & {
   type: "textarea";
   resize?: boolean;
 };
 
-type SelectMetadata = CommonMetadata & {
+export type SelectMetadata = CommonMetadata & {
   type: "select";
 };
 
-type RadioMetadata = CommonMetadata & {
+export type RadioMetadata = CommonMetadata & {
   type: "radio";
 };
 
-type ForbidFileProps<T> = T & {
+export type ForbidFileProps<T> = T & {
   resize?: never;
 };
 
-type NonFileMetadata = ForbidFileProps<
+export type NonFileMetadata = ForbidFileProps<
   CommonMetadata & {
     type?: Exclude<string, "textarea" | "select" | "radio">;
   }
@@ -145,9 +147,6 @@ export type FieldMetadata =
   | SelectMetadata
   | RadioMetadata
   | NonFileMetadata;
-
-// Export types for external use
-export type { RenderParams, ControllerParams, ControllerRenderProps };
 
 // NOTE: metadata only applicable to string or number fields
 // https://zod.dev/metadata?id=referencing-inferred-types

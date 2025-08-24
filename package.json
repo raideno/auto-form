@@ -64,7 +64,6 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/themes": "^3.2.1",
-    "@raideno/auto-form": "^0.0.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
     "lodash": "^4.17.21",
