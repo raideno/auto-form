@@ -110,6 +110,8 @@ export type CommonMetadata = {
   placeholder?: string;
   description?: string;
   label?: string;
+  withControls?: boolean;
+  step?: number;
   halfWidth?: boolean;
   renderer?: <TFieldValues extends FieldValues = FieldValues>(
     params: RenderParams<TFieldValues>

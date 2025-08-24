@@ -91,10 +91,10 @@ function getUploadPlaceholder(
   return undefined;
 }
 
-export const getConstraint = (
+export const getNumericConstraint = (
   checks: Array<z.core.$ZodCheck<never>>,
-  checkType: string
-): number | undefined => {
+  checkType: "max_length" | "min_length" | "greater_than" | "less_than"
+): { value: number; inclusive: boolean } | undefined => {
   const check = checks.find((check_) => check_._zod.def.check === checkType);
 
   if (!check) return undefined;
@@ -102,12 +102,36 @@ export const getConstraint = (
   switch (checkType) {
     case "max_length":
       if ("maximum" in check._zod.def) {
-        return (check as z.core.$ZodCheckMaxLength)._zod.def.maximum;
+        return {
+          value: (check as z.core.$ZodCheckMaxLength)._zod.def.maximum,
+          inclusive: true,
+        };
       }
       return undefined;
     case "min_length":
       if ("minimum" in check._zod.def) {
-        return (check as z.core.$ZodCheckMinLength)._zod.def.minimum;
+        return {
+          value: (check as z.core.$ZodCheckMinLength)._zod.def.minimum,
+          inclusive: true,
+        };
+      }
+      return undefined;
+    case "greater_than":
+      if ("value" in check._zod.def && "inclusive" in check._zod.def) {
+        // TODO: careful as the .value is a bigint and it might not fit into a Number
+        return {
+          value: Number((check as z.core.$ZodCheckGreaterThan)._zod.def.value),
+          inclusive: (check as z.core.$ZodCheckGreaterThan)._zod.def.inclusive,
+        };
+      }
+      return undefined;
+    case "less_than":
+      if ("value" in check._zod.def && "inclusive" in check._zod.def) {
+        // TODO: careful as the .value is a bigint and it might not fit into a Number
+        return {
+          value: Number((check as z.core.$ZodCheckLessThan)._zod.def.value),
+          inclusive: (check as z.core.$ZodCheckGreaterThan)._zod.def.inclusive,
+        };
       }
       return undefined;
     default:
@@ -188,6 +212,8 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
 
   let minLength: number | undefined;
   let maxLength: number | undefined;
+  let greaterThan: { value: number; inclusive: boolean } | undefined;
+  let lessThan: { value: number; inclusive: boolean } | undefined;
 
   let fileMinSize: number | undefined = 1;
   let fileMaxSize: number | undefined = 256;
@@ -203,8 +229,8 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     >;
     if (zodTypeGuards.file(arrayElementType)) {
       fieldType = "files";
-      minLength = getConstraint(checks, "min_length");
-      maxLength = getConstraint(checks, "max_length");
+      minLength = getNumericConstraint(checks, "min_length")?.value;
+      maxLength = getNumericConstraint(checks, "max_length")?.value;
 
       placeholder =
         placeholder ||
@@ -217,8 +243,8 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     } else if (zodTypeGuards.string(arrayElementType)) {
       fieldType = "tags";
       placeholder = placeholder || DEFAULT_PLACEHOLDERS.tags;
-      minLength = getConstraint(checks, "min_length");
-      maxLength = getConstraint(checks, "max_length");
+      minLength = getNumericConstraint(checks, "min_length")?.value;
+      maxLength = getNumericConstraint(checks, "max_length")?.value;
     } else {
       throw new Error("Only string and file arrays are supported.");
     }
@@ -250,15 +276,21 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     const checks = (baseType.def.checks ?? []) as Array<
       z.core.$ZodCheck<never>
     >;
-    const maxConstraint = getConstraint(checks, "max_length");
-    const minConstraint = getConstraint(checks, "min_length");
+    const maxLengthConstraint = getNumericConstraint(
+      checks,
+      "max_length"
+    )?.value;
+    const minLengthConstraint = getNumericConstraint(
+      checks,
+      "min_length"
+    )?.value;
 
-    if (maxConstraint) maxLength = maxConstraint;
+    if (maxLengthConstraint) maxLength = maxLengthConstraint;
 
     const TEXTAREA_THRESHOLD = 200;
     if (
-      (minConstraint && minConstraint > TEXTAREA_THRESHOLD) ||
-      (maxConstraint && maxConstraint > TEXTAREA_THRESHOLD) ||
+      (minLengthConstraint && minLengthConstraint > TEXTAREA_THRESHOLD) ||
+      (maxLengthConstraint && maxLengthConstraint > TEXTAREA_THRESHOLD) ||
       meta.type === "textarea"
     ) {
       fieldType = "textarea";
@@ -298,8 +330,21 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     fieldType = "date";
     placeholder = placeholder || DEFAULT_PLACEHOLDERS.date;
   } else if (zodTypeGuards.number(baseType)) {
+    const checks = (baseType.def.checks ?? []) as Array<
+      z.core.$ZodCheck<never>
+    >;
+    const greaterThanConstraint = getNumericConstraint(checks, "greater_than");
+    const lessThanConstraint = getNumericConstraint(checks, "less_than");
+
     fieldType = "number";
     placeholder = placeholder || DEFAULT_PLACEHOLDERS.number;
+
+    if (greaterThanConstraint) {
+      greaterThan = greaterThanConstraint;
+    }
+    if (lessThanConstraint) {
+      lessThan = lessThanConstraint;
+    }
   } else {
     console.error(`Unsupported Zod type for key "${key}":`, zodType);
     throw new Error("Unsupported Zod type");
@@ -319,6 +364,8 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     halfWidth: meta.halfWidth || false,
     minLength,
     maxLength,
+    greaterThan,
+    lessThan,
     enhancedOptions,
     meta,
     fileMaxSize,

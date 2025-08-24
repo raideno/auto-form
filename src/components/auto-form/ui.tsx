@@ -7,6 +7,7 @@ import {
   Badge,
   Button,
   Flex,
+  IconButton,
   RadioCards,
   Select,
   Switch,
@@ -38,6 +39,7 @@ import { TagInput } from "@/components/ui/tag-input";
 import { FileUpload } from "@/components/ui/file-upload";
 
 import { InputFileUpload } from "../ui/input-file-upload";
+import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
 
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchemaType;
@@ -466,7 +468,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       case "email":
       case "password":
       case "url":
-      case "number":
       case "date":
       case "time":
       case "datetime-local": {
@@ -480,20 +481,114 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             maxLength={maxLength}
             id={String(fieldName)}
             {...commonProps}
-            {...form.register(fieldName, {
-              ...(type === "number"
-                ? {
-                    setValueAs: (v) =>
-                      v === "" || v == null ? undefined : Number(v),
-                  }
-                : {}),
-            })}
+            {...form.register(fieldName)}
           >
             {showCharCount && (
               <TextField.Slot side="right">
                 <Badge color="gray" variant="soft">
                   {String(currentValue || "").length} / {maxLength}
                 </Badge>
+              </TextField.Slot>
+            )}
+          </TextField.Root>
+        );
+      }
+
+      case "number": {
+        const showControls = !!meta?.withControls;
+        return (
+          <TextField.Root
+            size="3"
+            type="number"
+            placeholder={placeholder}
+            id={String(fieldName)}
+            {...commonProps}
+            {...form.register(fieldName, {
+              setValueAs: (v) =>
+                v === "" || v == null ? undefined : Number(v),
+            })}
+          >
+            {showControls && (
+              <TextField.Slot side="right">
+                <div className="flex items-center gap-1">
+                  <IconButton
+                    variant="soft"
+                    size="1"
+                    type="button"
+                    disabled={
+                      isDisabled ||
+                      isReadOnly ||
+                      (fieldConfig.greaterThan
+                        ? fieldConfig.greaterThan.inclusive
+                          ? Number(currentValue) <=
+                            fieldConfig.greaterThan.value
+                          : Number(currentValue) < fieldConfig.greaterThan.value
+                        : false)
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const curr = Number(currentValue ?? 0);
+                      const next = !fieldConfig.greaterThan
+                        ? (Number.isNaN(curr) ? 0 : curr) -
+                          (fieldConfig.meta?.step || 1)
+                        : Math.max(
+                            (Number.isNaN(curr) ? 0 : curr) -
+                              (fieldConfig.meta?.step || 1),
+                            fieldConfig.greaterThan.value
+                          );
+                      form.setValue(
+                        fieldName,
+                        next as PathValue<
+                          z.output<TSchemaType>,
+                          Path<z.output<TSchemaType>>
+                        >,
+                        { shouldValidate: true }
+                      );
+                    }}
+                    aria-label="Decrement"
+                    title="Decrement"
+                  >
+                    <MinusIcon />
+                  </IconButton>
+                  <IconButton
+                    variant="soft"
+                    size="1"
+                    type="button"
+                    disabled={
+                      isDisabled ||
+                      isReadOnly ||
+                      (fieldConfig.lessThan
+                        ? fieldConfig.lessThan.inclusive
+                          ? Number(currentValue) >= fieldConfig.lessThan.value
+                          : Number(currentValue) > fieldConfig.lessThan.value
+                        : false)
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const curr = Number(currentValue ?? 0);
+                      const next = !fieldConfig.lessThan
+                        ? (Number.isNaN(curr) ? 0 : curr) +
+                          (fieldConfig.meta?.step || 1)
+                        : Math.min(
+                            (Number.isNaN(curr) ? 0 : curr) +
+                              (fieldConfig.meta?.step || 1),
+                            fieldConfig.lessThan.value
+                          );
+                      form.setValue(
+                        fieldName,
+                        next as PathValue<
+                          z.output<TSchemaType>,
+                          Path<z.output<TSchemaType>>
+                        >,
+                        { shouldValidate: true }
+                      );
+                    }}
+                    aria-label="Increment"
+                    title="Increment"
+                  >
+                    <PlusIcon />
+                  </IconButton>
+                </div>
               </TextField.Slot>
             )}
           </TextField.Root>

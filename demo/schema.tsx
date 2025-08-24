@@ -15,7 +15,10 @@ export const INITIAL_SCHEMA_CODE = z_.object({
     .min(2)
     .max(4),
   tags: z_.array(z_.string()).max(8),
-
+  price: z_.number().min(1).max(100).register(MetadataRegistry, {
+    withControls: true,
+    step: 10,
+  }),
   priority: z_.enum(["low", "medium", "high"]).register(MetadataRegistry, {
     type: "radio",
     label: "Priority Level",

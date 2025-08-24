@@ -30,6 +30,8 @@ export interface FieldConfig {
   halfWidth: boolean;
   minLength?: number;
   maxLength?: number;
+  greaterThan?: { value: number; inclusive?: boolean };
+  lessThan?: { value: number; inclusive?: boolean };
   enhancedOptions?: Array<EnumOption> | null;
   meta?: FieldMetadata;
   fileMaxSize?: number;
