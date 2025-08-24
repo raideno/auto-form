@@ -14,7 +14,7 @@ dist
 dist-demo
 dist-lib
 dist-ssr
-*.local
+*.local*
 
 # Editor directories and files
 .vscode/*

@@ -47,7 +47,6 @@ export default defineConfig({
         "@radix-ui/react-label",
         "@radix-ui/themes",
         "framer-motion",
-        "lucide-react",
         "react-error-boundary",
       ],
       treeshake: true,
