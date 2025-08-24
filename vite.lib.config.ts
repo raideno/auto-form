@@ -44,7 +44,7 @@ export default defineConfig({
         "zod/v4",
       ],
     },
-    sourcemap: true,
+    sourcemap: false,
     emptyOutDir: true,
     cssCodeSplit: false,
   },
