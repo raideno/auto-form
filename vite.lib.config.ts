@@ -46,7 +46,6 @@ export default defineConfig({
         "zod/v4",
         "@radix-ui/react-label",
         "@radix-ui/themes",
-        "framer-motion",
         "react-error-boundary",
       ],
       treeshake: true,

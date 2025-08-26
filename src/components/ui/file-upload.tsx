@@ -2,7 +2,6 @@ import React, { useRef, useState } from "react";
 
 import { IconButton, Text, Dialog, Flex } from "@radix-ui/themes";
 import { Cross1Icon, FileIcon, UploadIcon } from "@radix-ui/react-icons";
-import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -63,12 +62,9 @@ const ImageThumbnail = ({
   }
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.1, rotate: 2 }}
-      whileTap={{ scale: 0.9 }}
+    <div
       className="cursor-pointer rounded overflow-hidden border border-gray-200"
       onClick={onClick}
-      transition={{ duration: 0.2 }}
     >
       {thumbnail ? (
         <img
@@ -81,7 +77,7 @@ const ImageThumbnail = ({
           <FileIcon color="gray" className="w-4 h-4" />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 
@@ -340,21 +336,13 @@ export function FileUpload({
     <div className={cn("w-full", className)}>
       {/* File List - Show uploaded files */}
       {value.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-3 space-y-2"
-        >
-          <AnimatePresence>
+        <div className="mb-3 space-y-2">
+          <>
             {value.map((file, index) => (
-              <motion.div
+              <div
                 key={`${file.name}-${file.size}-${
                   file.lastModified || Date.now()
                 }`}
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]"
               >
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -381,10 +369,10 @@ export function FileUpload({
                 >
                   <Cross1Icon className="w-4 h-4" />
                 </IconButton>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
-        </motion.div>
+          </>
+        </div>
       )}
 
       {/* Upload Area */}
@@ -493,21 +481,13 @@ export function FileUpload({
             style={{ minHeight: "300px" }}
           >
             {isPreviewLoading ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center justify-center"
-              >
+              <div className="flex items-center justify-center">
                 <Text size="3" color="gray">
                   Loading preview...
                 </Text>
-              </motion.div>
+              </div>
             ) : previewImage ? (
-              <motion.img
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+              <img
                 src={previewImage}
                 alt="Preview"
                 className="max-w-full max-h-[90vh] object-contain"
