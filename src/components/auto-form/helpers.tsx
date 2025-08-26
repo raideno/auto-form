@@ -196,7 +196,8 @@ export const inferTypeFromKey = (
 
 export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
   if (!(zodType instanceof z.ZodType)) {
-    throw new Error(`Expected ZodType for key "${key}", got ${typeof zodType}`);
+    console.error(`Expected ZodType for key "${key}", got`, zodType);
+    // throw new Error(`Expected ZodType for key "${key}", got ${typeof zodType}`);
   }
 
   const meta = (MetadataRegistry.get(zodType) || {
