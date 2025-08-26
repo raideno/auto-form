@@ -467,10 +467,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       case "text":
       case "email":
       case "password":
-      case "url":
-      case "date":
-      case "time":
-      case "datetime-local": {
+      case "url": {
         const showCharCount =
           ["text", "password", "url"].includes(type) && !!maxLength;
         return (
@@ -491,6 +488,30 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
               </TextField.Slot>
             )}
           </TextField.Root>
+        );
+      }
+
+      case "date":
+      case "time":
+      case "datetime-local": {
+        return (
+          <TextField.Root
+            size="3"
+            type={type}
+            placeholder={placeholder}
+            id={String(fieldName)}
+            {...commonProps}
+            {...form.register(fieldName, {
+              setValueAs: (v) => {
+                if (!v) return undefined;
+                try {
+                  return new Date(v);
+                } catch {
+                  return undefined;
+                }
+              },
+            })}
+          />
         );
       }
 
