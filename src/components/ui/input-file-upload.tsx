@@ -1,9 +1,15 @@
 import React, { useRef, useState } from "react";
 
-import { IconButton, Text, Dialog, Flex } from "@radix-ui/themes";
-import { Cross1Icon, FileIcon, UploadIcon } from "@radix-ui/react-icons";
+import { IconButton, Text, Dialog, Flex, Tooltip } from "@radix-ui/themes";
+import {
+  Cross1Icon,
+  FileIcon,
+  InfoCircledIcon,
+  UploadIcon,
+} from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
+import { UploadPreview } from "./file-upload";
 
 const isImageFile = (file: File): boolean => {
   return file.type.startsWith("image/");
@@ -192,32 +198,11 @@ export function InputFileUpload({
   if (value) {
     return (
       <div className={cn("w-full", className)}>
-        <div className="h-15 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <ImageThumbnail
-              file={value}
-              onClick={() => handleImagePreview(value)}
-            />
-            <div className="flex-1 min-w-0">
-              <Text size="1" color="gray">
-                {formatFileSize(value.size)}
-              </Text>
-              <Text> - </Text>
-              <Text size="2" className="font-medium truncate">
-                {value.name}
-              </Text>
-            </div>
-          </div>
-          <IconButton
-            type="button"
-            variant="ghost"
-            size="1"
-            onClick={removeFile}
-            className="flex-shrink-0 ml-2"
-          >
-            <Cross1Icon className="w-4 h-4" />
-          </IconButton>
-        </div>
+        <UploadPreview
+          file={value}
+          removeFile={removeFile}
+          handleImagePreview={() => handleImagePreview(value)}
+        />
 
         {/* Image Preview Dialog */}
         <Dialog.Root
@@ -298,7 +283,7 @@ export function InputFileUpload({
     <div className={cn("w-full", className)}>
       <div
         className={cn(
-          "h-15 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]",
+          "h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]",
           dragActive && !disabled
             ? "border-blue-400 bg-blue-50"
             : "border-gray-300 bg-gray-50",
@@ -319,15 +304,22 @@ export function InputFileUpload({
           disabled={disabled}
           className="hidden"
         />
-        <div className="w-full flex flex-row items-center gap-2">
-          <UploadIcon width={20} height={20} color="gray" />
-          <Text size="3" className="font-medium text-gray-700">
-            {placeholder}
-          </Text>
-          <Text size="2" color="gray" className="block mt-1">
-            {accept ? `Accepted: ${accept}` : "All file types accepted"} • Min{" "}
-            {formatFileSize(minSize)} • Max {formatFileSize(maxSize)}
-          </Text>
+        <div className="w-full flex flex-row items-center justify-between gap-2">
+          <div className="flex flex-row items-center gap-2">
+            <UploadIcon color="gray" />
+            <Text size="3" color="gray" className="font-medium">
+              {placeholder}
+            </Text>
+          </div>
+          <Tooltip
+            content={`Accepted: ${
+              accept || "All file types"
+            } • Min ${formatFileSize(minSize)} • Max ${formatFileSize(
+              maxSize
+            )}`}
+          >
+            <InfoCircledIcon />
+          </Tooltip>
         </div>
       </div>
       {error && (

@@ -55,7 +55,7 @@ const ImageThumbnail = ({
 
   if (!isImageFile(file)) {
     return (
-      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
+      <div className="h-[var(--space-5)] w-[var(--space-5)] flex items-center justify-center bg-[var(--gray-2)] rounded-[max(var(--radius-full),var(--radius-2))] border border-[var(--gray-6)] flex-shrink-0">
         <FileIcon color="gray" className="w-4 h-4" />
       </div>
     );
@@ -63,20 +63,54 @@ const ImageThumbnail = ({
 
   return (
     <div
-      className="cursor-pointer rounded overflow-hidden border border-gray-200"
+      className="cursor-pointer rounded-[max(var(--radius-full),var(--radius-2))] overflow-hidden border border-[var(--gray-6)]"
       onClick={onClick}
     >
       {thumbnail ? (
         <img
           src={thumbnail}
           alt={file.name}
-          className="w-8 h-8 object-cover flex-shrink-0"
+          className="h-[var(--space-5)] w-[var(--space-5)] object-cover flex-shrink-0"
         />
       ) : (
-        <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
+        <div className="h-[var(--space-5)] w-[var(--space-5)] flex items-center justify-center bg-[var(--gray-2)]">
           <FileIcon color="gray" className="w-4 h-4" />
         </div>
       )}
+    </div>
+  );
+};
+
+export const UploadPreview = ({
+  file,
+  handleImagePreview,
+  removeFile,
+}: {
+  file: File;
+  handleImagePreview: () => void;
+  removeFile: () => void;
+}) => {
+  return (
+    <div className="h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <ImageThumbnail file={file} onClick={() => handleImagePreview()} />
+        <Text as="div" size="2" className="font-medium truncate">
+          {file.name}
+        </Text>
+        <Text as="div"> - </Text>
+        <Text as="div" size="1" color="gray">
+          {formatFileSize(file.size)}
+        </Text>
+      </div>
+      <IconButton
+        type="button"
+        variant="ghost"
+        size="1"
+        onClick={() => removeFile()}
+        className="flex-shrink-0 ml-2"
+      >
+        <Cross1Icon className="w-4 h-4" />
+      </IconButton>
     </div>
   );
 };
@@ -339,37 +373,12 @@ export function FileUpload({
         <div className="mb-3 space-y-2">
           <>
             {value.map((file, index) => (
-              <div
-                key={`${file.name}-${file.size}-${
-                  file.lastModified || Date.now()
-                }`}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-solid border-[var(--gray-7)]"
-              >
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <ImageThumbnail
-                    file={file}
-                    onClick={() => handleImagePreview(file)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <Text size="1" color="gray">
-                      {formatFileSize(file.size)}
-                    </Text>
-                    <Text> - </Text>
-                    <Text size="2" className="font-medium truncate">
-                      {file.name}
-                    </Text>
-                  </div>
-                </div>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="1"
-                  onClick={() => removeFile(index)}
-                  className="flex-shrink-0 ml-2"
-                >
-                  <Cross1Icon className="w-4 h-4" />
-                </IconButton>
-              </div>
+              <UploadPreview
+                file={file}
+                key={`${file.name}-${file.size}-${file.lastModified}`}
+                handleImagePreview={() => handleImagePreview(file)}
+                removeFile={() => removeFile(index)}
+              />
             ))}
           </>
         </div>
@@ -378,7 +387,7 @@ export function FileUpload({
       {/* Upload Area */}
       <div
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          "relative border-2 border-dashed rounded-[max(var(--radius-2),var(--radius-full))] p-6 text-center transition-colors",
           dragActive && !disabled
             ? "border-blue-400 bg-blue-50"
             : "border-gray-300 bg-gray-50",
