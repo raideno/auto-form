@@ -1,4 +1,4 @@
-// index.tsx
+// ui.tsx
 
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -160,13 +160,17 @@ interface ContentProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
     renderDefault: () => React.ReactNode;
     form: AutoFormContextValue<TSchemaType>["form"];
   }) => React.ReactNode;
+  // New: optionally select which fields to render (in the specified order).
+  // If not provided or empty, all fields will be rendered (current behavior).
+  fields?: Array<Path<z.infer<TSchemaType>>>;
 }
 
 function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   className = "",
   renderField,
+  fields: selectedFieldKeys,
 }: ContentProps_<TSchemaType>) {
-  const { form, fieldGroups, labels } = useAutoForm<TSchemaType>();
+  const { form, fields: allFields, labels } = useAutoForm<TSchemaType>();
   const values = form.watch();
 
   const evaluateConditional = <T,>(
@@ -635,6 +639,26 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     }
   };
 
+  // Determine which fields to render (and in which order) and group them.
+  const fieldsToRender: Array<FieldConfig> =
+    selectedFieldKeys && selectedFieldKeys.length > 0
+      ? (selectedFieldKeys
+          .map((k) => {
+            const found = allFields.find((f) => f.key === (k as string));
+            if (!found) {
+              console.warn(
+                `[AutoForm.Content] Field key "${String(
+                  k
+                )}" not found in schema.`
+              );
+            }
+            return found;
+          })
+          .filter(Boolean) as Array<FieldConfig>)
+      : allFields;
+
+  const fieldGroups = groupFields(fieldsToRender);
+
   return (
     <div className={cn("w-full flex flex-col gap-4", className)}>
       {fieldGroups.map((group, groupIndex) => (
@@ -718,12 +742,10 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
               );
             };
 
-            // If a custom renderer is provided, pass the controller and default render to it
             if (meta?.renderer) {
               const fieldState = form.getFieldState(fieldName);
               const currentValue = form.watch(fieldName);
 
-              // Generate the controller component (either custom or default)
               const controllerComponent = meta?.controller
                 ? meta.controller(
                     createControllerParams(fieldConfig, fieldName)
