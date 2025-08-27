@@ -197,6 +197,13 @@ export const inferTypeFromKey = (
 export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
   if (!(zodType instanceof z.ZodType)) {
     console.error(`Expected ZodType for key "${key}", got`, zodType);
+    return {
+      key,
+      type: "unsupported",
+      label: startCase(key),
+      placeholder: DEFAULT_PLACEHOLDERS.text,
+      halfWidth: false,
+    };
     // throw new Error(`Expected ZodType for key "${key}", got ${typeof zodType}`);
   }
 

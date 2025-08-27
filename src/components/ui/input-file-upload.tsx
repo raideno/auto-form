@@ -1,12 +1,7 @@
 import React, { useRef, useState } from "react";
 
 import { IconButton, Text, Dialog, Flex, Tooltip } from "@radix-ui/themes";
-import {
-  Cross1Icon,
-  FileIcon,
-  InfoCircledIcon,
-  UploadIcon,
-} from "@radix-ui/react-icons";
+import { Cross1Icon, InfoCircledIcon, UploadIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import { UploadPreview } from "./file-upload";
@@ -29,49 +24,6 @@ const formatFileSize = (bytes: number): string => {
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-};
-
-const ImageThumbnail = ({
-  file,
-  onClick,
-}: {
-  file: File;
-  onClick: () => void;
-}) => {
-  const [thumbnail, setThumbnail] = useState<string>("");
-
-  React.useEffect(() => {
-    if (isImageFile(file)) {
-      createImagePreview(file).then(setThumbnail);
-    }
-  }, [file]);
-
-  if (!isImageFile(file)) {
-    return (
-      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 flex-shrink-0">
-        <FileIcon color="gray" className="w-4 h-4" />
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="cursor-pointer rounded overflow-hidden border border-gray-200"
-      onClick={onClick}
-    >
-      {thumbnail ? (
-        <img
-          src={thumbnail}
-          alt={file.name}
-          className="w-8 h-8 object-cover flex-shrink-0"
-        />
-      ) : (
-        <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-          <FileIcon color="gray" className="w-4 h-4" />
-        </div>
-      )}
-    </div>
-  );
 };
 
 export interface InputFileUploadProps {
