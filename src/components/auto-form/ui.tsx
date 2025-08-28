@@ -292,7 +292,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                   control={form.control}
                   name={fieldName}
                   render={() => (
-                    <FormItem className="w-full flex flex-col">
+                    <FormItem className="w-full !flex flex-col">
                       {fieldConfig.type === "switch" ? (
                         <div className="flex flex-row items-center justify-between space-x-3 py-4">
                           {labels && (
