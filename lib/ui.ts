@@ -11,4 +11,3 @@ export type {
 
 export * from "../src/components/ui/tag-input";
 export * from "../src/components/ui/file-upload";
-export * from "../src/components/ui/input-file-upload";
