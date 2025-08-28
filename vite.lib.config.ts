@@ -29,13 +29,10 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        ui: path.resolve(__dirname, "lib/ui/index.ts"),
+        ui: path.resolve(__dirname, "lib/ui.ts"),
         registry: path.resolve(__dirname, "lib/registry.ts"),
         zod: path.resolve(__dirname, "lib/zod.ts"),
-        "ui/controllers": path.resolve(
-          __dirname,
-          "lib/ui/controllers/index.ts"
-        ),
+        controllers: path.resolve(__dirname, "lib/controllers.ts"),
       },
       formats: ["es"],
     },
