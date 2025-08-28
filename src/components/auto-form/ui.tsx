@@ -11,7 +11,12 @@ import type { ButtonProps } from "@radix-ui/themes";
 import type { AutoFormContextValue, FieldConfig } from "./context";
 
 import { AutoFormContext, useAutoForm } from "./context";
-import { getFieldType, groupFields, zodTypeGuards } from "./helpers";
+import {
+  getFieldType,
+  groupFields,
+  renderRichText,
+  zodTypeGuards,
+} from "./helpers";
 import { cn } from "@/lib/utils";
 import {
   Form,
@@ -297,7 +302,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                               </FormLabel>
                               {meta?.description && (
                                 <Text size="2" color="gray">
-                                  {meta.description}
+                                  {renderRichText(meta.description)}
                                 </Text>
                               )}
                             </Flex>
@@ -331,7 +336,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                           </ErrorBoundary>
                           {meta?.description && (
                             <Text size="2" color="gray">
-                              {meta.description}
+                              {renderRichText(meta.description)}
                             </Text>
                           )}
                         </>

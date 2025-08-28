@@ -24,6 +24,43 @@ export function startCase(str: string): string {
 
 type ZodUnionTuple = readonly [z.ZodTypeAny, ...z.ZodTypeAny[]];
 
+import React from "react";
+
+export function renderRichText(text: string): (string | React.ReactNode)[] {
+  const regex = /(\*\*(.+?)\*\*|__(.+?)__|_(.+?)_)/g;
+  const parts: (string | React.ReactNode)[] = [];
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    // plain text before match
+    if (lastIndex < match.index) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // **bold**
+      parts.push(<strong key={match.index}>{renderRichText(match[2])}</strong>);
+    } else if (match[3]) {
+      // __underline__
+      parts.push(<u key={match.index}>{renderRichText(match[3])}</u>);
+    } else if (match[4]) {
+      // _italic_
+      parts.push(<em key={match.index}>{renderRichText(match[4])}</em>);
+    }
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // leftover plain text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
 export const zodTypeGuards = {
   string: (schema: z.ZodTypeAny): schema is z.ZodString =>
     schema.def.type === "string",

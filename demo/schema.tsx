@@ -4,7 +4,9 @@ import { MetadataRegistry } from "../src/components/auto-form/registry";
 
 export const INITIAL_SCHEMA_CODE = z_.object({
   name: z_.string().max(32).min(2),
-  avatar: z_.file(),
+  avatar: z_.file().register(MetadataRegistry, {
+    description: "Upload your **__avatar__**.",
+  }),
   tags: z_.array(z_.string()).max(8),
   price: z_
     .number()
@@ -30,7 +32,9 @@ export const INITIAL_SCHEMA_CODE = z_.object({
 export const INITIAL_SCHEMA_STRING = `
 z_.object({
   name: z_.string().max(32).min(2),
-  avatar: z_.file(),
+  avatar: z_.file().register(MetadataRegistry, {
+    description: "Upload your **__avatar__**.",
+  }),
   tags: z_.array(z_.string()).max(8),
   price: z_
     .number()
