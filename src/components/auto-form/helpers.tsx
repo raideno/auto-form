@@ -130,7 +130,7 @@ export const getNumericConstraint = (
         // TODO: careful as the .value is a bigint and it might not fit into a Number
         return {
           value: Number((check as z.core.$ZodCheckLessThan)._zod.def.value),
-          inclusive: (check as z.core.$ZodCheckGreaterThan)._zod.def.inclusive,
+          inclusive: (check as z.core.$ZodCheckLessThan)._zod.def.inclusive,
         };
       }
       return undefined;

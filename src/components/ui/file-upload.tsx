@@ -1,4 +1,6 @@
-import React, { useRef, useState } from "react";
+import type React from "react";
+
+import { useRef, useEffect, useState } from "react";
 
 import { IconButton, Text, Dialog, Flex } from "@radix-ui/themes";
 import { Cross1Icon, FileIcon, UploadIcon } from "@radix-ui/react-icons";
@@ -47,7 +49,7 @@ const ImageThumbnail = ({
 }) => {
   const [thumbnail, setThumbnail] = useState<string>("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isImageFile(file)) {
       createImagePreview(file).then(setThumbnail);
     }
@@ -266,7 +268,7 @@ export function FileUpload({
   };
 
   // Handle CtrlV anywhere on the page (except when typing in inputs)
-  React.useEffect(() => {
+  useEffect(() => {
     const onWindowPaste = (e: ClipboardEvent) => {
       if (disabled) return;
 

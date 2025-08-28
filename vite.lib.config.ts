@@ -14,6 +14,7 @@ export default defineConfig({
         "lib/**/*",
         "src/components/auto-form/**/*",
         "src/components/ui/**/*",
+        "src/components/controllers/**/*",
         "src/lib/**/*",
       ],
       exclude: ["demo/**/*", "**/*.test.*", "**/*.spec.*"],
@@ -28,9 +29,13 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        ui: path.resolve(__dirname, "lib/ui.ts"),
+        ui: path.resolve(__dirname, "lib/ui/index.ts"),
         registry: path.resolve(__dirname, "lib/registry.ts"),
         zod: path.resolve(__dirname, "lib/zod.ts"),
+        "ui/controllers": path.resolve(
+          __dirname,
+          "lib/ui/controllers/index.ts"
+        ),
       },
       formats: ["es"],
     },

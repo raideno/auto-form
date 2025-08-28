@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useRef, useState } from "react";
 
 import { IconButton, Text, Dialog, Flex, Tooltip } from "@radix-ui/themes";
 import { Cross1Icon, InfoCircledIcon, UploadIcon } from "@radix-ui/react-icons";

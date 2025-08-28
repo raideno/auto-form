@@ -3,7 +3,8 @@
 import { z } from "zod/v4";
 import type React from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
-import type { EnumOption } from "./enhanced-zod";
+// import type { EnumOption } from "./enhanced-zod";
+import type { FieldConfig } from "./context";
 
 // NOTE: moved into here in order to keep @ imports in auto.tsx and still be
 // able to import registry at build time as @ imports aren't resolved yet
@@ -30,20 +31,7 @@ export type ControllerRenderProps<
 };
 
 export type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
-  fieldConfig: {
-    key: string;
-    type: string;
-    label: string;
-    placeholder: string;
-    halfWidth: boolean;
-    minLength?: number;
-    maxLength?: number;
-    enhancedOptions?: Array<EnumOption> | null;
-    meta?: FieldMetadata;
-    fileMaxSize?: number;
-    fileMinSize?: number;
-    fileMime?: string | string[];
-  };
+  fieldConfig: FieldConfig;
   meta: FieldMetadata | undefined;
   field: {
     name: FieldPath<TFieldValues>;
@@ -62,23 +50,14 @@ export type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
   labels: boolean;
   controller: React.ReactNode;
   defaultRender: () => React.ReactNode;
+  ui: {
+    disabled: boolean;
+    readOnly: boolean;
+  };
 };
 
 export type ControllerParams<TFieldValues extends FieldValues = FieldValues> = {
-  fieldConfig: {
-    key: string;
-    type: string;
-    label: string;
-    placeholder: string;
-    halfWidth: boolean;
-    minLength?: number;
-    maxLength?: number;
-    enhancedOptions?: Array<EnumOption> | null;
-    meta?: FieldMetadata;
-    fileMaxSize?: number;
-    fileMinSize?: number;
-    fileMime?: string | string[];
-  };
+  fieldConfig: FieldConfig;
   meta: FieldMetadata | undefined;
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
@@ -98,6 +77,10 @@ export type ControllerParams<TFieldValues extends FieldValues = FieldValues> = {
   formState: {
     isSubmitting: boolean;
     isLoading: boolean;
+  };
+  ui: {
+    disabled: boolean;
+    readOnly: boolean;
   };
   // Default controller component for fallback
   defaultController: React.ReactNode;

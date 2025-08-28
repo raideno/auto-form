@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, forwardRef, useContext, useState } from "react";
-
+import { createContext, forwardRef, useContext, useState } from "react";
+import type React from "react";
 import { Badge, Box, TextField } from "@radix-ui/themes";
 
 import type { BoxProps } from "@radix-ui/themes";
@@ -11,6 +11,7 @@ interface TagInputContextValue {
   inputValue: string;
   setInputValue: (value: string) => void;
   addTag: (tag: string) => void;
+  addTags: (tags: Array<string>) => void;
   removeTag: (index: number) => void;
   onTagsChange?: (tags: Array<string>) => void;
   maxTags?: number;
@@ -71,6 +72,28 @@ const TagInputRoot = forwardRef<HTMLDivElement, TagInputRootProps>(
       }
     };
 
+    const addTags = (newTags: Array<string>) => {
+      const uniqueNewTags = newTags
+        .map((tag) => tag.trim())
+        .filter((tag) => tag && !currentTags.includes(tag));
+      if (uniqueNewTags.length === 0) {
+        return;
+      }
+
+      let combinedTags = [...currentTags, ...uniqueNewTags];
+      if (maxTags) {
+        combinedTags = combinedTags.slice(0, maxTags);
+      }
+      if (minTags && combinedTags.length < minTags) {
+        return;
+      }
+
+      if (value === undefined) {
+        setTags(combinedTags);
+      }
+      onValueChange?.(combinedTags);
+    };
+
     const removeTag = (index: number) => {
       const newTags = currentTags.filter((_, i) => i !== index);
       if (value === undefined) {
@@ -83,6 +106,7 @@ const TagInputRoot = forwardRef<HTMLDivElement, TagInputRootProps>(
       tags: currentTags,
       inputValue,
       setInputValue,
+      addTags,
       addTag,
       removeTag,
       onTagsChange: onValueChange,
@@ -110,7 +134,7 @@ export interface TagInputInputProps
 
 const TagInputInput = forwardRef<HTMLInputElement, TagInputInputProps>(
   ({ placeholder = "Add tags...", onKeyDown, children, ...props }, ref) => {
-    const { inputValue, setInputValue, addTag, tags, maxTags } =
+    const { inputValue, setInputValue, addTag, addTags, tags, maxTags } =
       useTagInputContext();
 
     const isMaxReached = maxTags ? tags.length >= maxTags : false;
@@ -139,11 +163,7 @@ const TagInputInput = forwardRef<HTMLInputElement, TagInputInputProps>(
         const tagsToAdd = parts.slice(0, -1);
         const remaining = parts[parts.length - 1];
 
-        tagsToAdd.forEach((tag) => {
-          if (tag.trim() && (!maxTags || tags.length < maxTags)) {
-            addTag(tag.trim());
-          }
-        });
+        addTags(tagsToAdd);
 
         setInputValue(remaining);
       } else {

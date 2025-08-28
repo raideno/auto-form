@@ -1,20 +1,7 @@
-// ui.tsx
-
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import {
-  Badge,
-  Button,
-  Flex,
-  IconButton,
-  RadioCards,
-  Select,
-  Switch,
-  Text,
-  TextArea,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, Flex, Text } from "@radix-ui/themes";
 import { useForm } from "react-hook-form";
 
 import type React from "react";
@@ -24,8 +11,7 @@ import type { ButtonProps } from "@radix-ui/themes";
 import type { AutoFormContextValue, FieldConfig } from "./context";
 
 import { AutoFormContext, useAutoForm } from "./context";
-import { getFieldType, groupFields, startCase, zodTypeGuards } from "./helpers";
-
+import { getFieldType, groupFields, zodTypeGuards } from "./helpers";
 import { cn } from "@/lib/utils";
 import {
   Form,
@@ -35,11 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { TagInput } from "@/components/ui/tag-input";
-import { FileUpload } from "@/components/ui/file-upload";
 
-import { InputFileUpload } from "../ui/input-file-upload";
-import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
+import { getDefaultController } from "../controllers";
+import type { ControllerParams } from "./registry";
 
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchemaType;
@@ -160,8 +144,6 @@ interface ContentProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
     renderDefault: () => React.ReactNode;
     form: AutoFormContextValue<TSchemaType>["form"];
   }) => React.ReactNode;
-  // New: optionally select which fields to render (in the specified order).
-  // If not provided or empty, all fields will be rendered (current behavior).
   fields?: Array<Path<z.infer<TSchemaType>>>;
 }
 
@@ -189,10 +171,14 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     return value;
   };
 
+  // Bind controller/render params to the current form value type
+  type FV = z.output<TSchemaType>;
+  type BaseParams = Omit<ControllerParams<FV>, "defaultController">;
+
   const createControllerParams = (
     fieldConfig: FieldConfig,
     fieldName: Path<z.infer<TSchemaType>>
-  ) => {
+  ): ControllerParams<FV> => {
     const set =
       <N extends Path<z.output<TSchemaType>>>(name: N) =>
       (
@@ -204,7 +190,15 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     const fieldState = form.getFieldState(fieldName);
     const currentValue = form.watch(fieldName);
 
-    return {
+    const isDisabled = evaluateConditional(fieldConfig.meta?.disabled, false);
+    const isReadOnly = evaluateConditional(fieldConfig.meta?.readonly, false);
+
+    const ui = {
+      disabled: isDisabled,
+      readOnly: isReadOnly,
+    };
+
+    const baseParams: BaseParams = {
       fieldConfig,
       meta: fieldConfig.meta,
       name: fieldName,
@@ -231,415 +225,22 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         isSubmitting: form.formState.isSubmitting,
         isLoading: form.formState.isLoading,
       },
-      defaultController: renderFormControl(fieldConfig),
+      ui,
+    };
+
+    // const defaultControllerNode = getDefaultController(fieldConfig.type)(
+    //   baseParams as ControllerParams
+    // );
+    const defaultControllerNode = getDefaultController<FV>(fieldConfig.type)(
+      baseParams as ControllerParams<FV>
+    );
+
+    return {
+      ...(baseParams as ControllerParams<FV>),
+      defaultController: defaultControllerNode,
     };
   };
 
-  const renderFormControl = (fieldConfig: FieldConfig) => {
-    const { key, type, placeholder, maxLength, minLength, meta } = fieldConfig;
-    const fieldName = key as Path<z.infer<TSchemaType>>;
-
-    const isDisabled = evaluateConditional(meta?.disabled, false);
-    const isReadOnly = evaluateConditional(meta?.readonly, false);
-    const isMultiple = Array.isArray(form.watch(fieldName));
-    const currentValue = form.watch(fieldName);
-
-    const commonProps = { disabled: isDisabled, readOnly: isReadOnly };
-
-    switch (type) {
-      case "file":
-        return (
-          <InputFileUpload
-            value={currentValue ? (currentValue as unknown as File) : undefined}
-            onChange={(file) => {
-              form.setValue(
-                fieldName,
-                file as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >,
-                { shouldValidate: true }
-              );
-            }}
-            disabled={currentValue != undefined}
-            placeholder={placeholder}
-            accept={
-              Array.isArray(fieldConfig.fileMime)
-                ? fieldConfig.fileMime.join(",")
-                : fieldConfig.fileMime
-            }
-            minSize={fieldConfig.fileMinSize}
-            maxSize={fieldConfig.fileMaxSize}
-          />
-        );
-      case "files":
-        return (
-          <FileUpload
-            value={
-              currentValue
-                ? Array.isArray(currentValue)
-                  ? currentValue
-                  : ([currentValue] as unknown as Array<File>)
-                : undefined
-            }
-            onChange={(files) => {
-              form.setValue(
-                fieldName,
-                files as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >,
-                { shouldValidate: true }
-              );
-            }}
-            multiple={isMultiple}
-            disabled={
-              fieldConfig.maxLength
-                ? ((form.getValues(fieldName) as Array<File>) || []).length >=
-                  fieldConfig.maxLength
-                : false
-            }
-            placeholder={placeholder}
-            accept={
-              Array.isArray(fieldConfig.fileMime)
-                ? fieldConfig.fileMime.join(",")
-                : fieldConfig.fileMime
-            }
-            minSize={fieldConfig.fileMinSize}
-            maxSize={fieldConfig.fileMaxSize}
-          />
-        );
-
-      case "textarea":
-        return (
-          <TextArea
-            size={"3"}
-            placeholder={placeholder}
-            className={cn(
-              "min-h-[80px]",
-              meta?.type === "textarea" && meta?.resize && "resize-y"
-            )}
-            id={String(fieldName)}
-            maxLength={maxLength}
-            {...commonProps}
-            {...form.register(fieldName)}
-          />
-        );
-
-      case "tags": {
-        const currentTags = (currentValue || []) as Array<string>;
-        return (
-          <TagInput.Root
-            maxTags={maxLength}
-            minTags={minLength}
-            className="space-y-2"
-            value={currentTags}
-            onValueChange={(newTags) => {
-              form.setValue(
-                fieldName,
-                newTags as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >
-              );
-            }}
-          >
-            <TagInput.Input
-              size={"3"}
-              disabled={
-                isDisabled ||
-                (maxLength !== undefined && currentTags.length >= maxLength)
-              }
-              readOnly={isReadOnly}
-              placeholder={placeholder}
-            >
-              {maxLength && (
-                <TagInput.Slot side="right">
-                  {currentTags.length} / {maxLength}
-                </TagInput.Slot>
-              )}
-            </TagInput.Input>
-            <TagInput.Content />
-          </TagInput.Root>
-        );
-      }
-
-      case "switch":
-        return (
-          <Switch
-            checked={!!currentValue}
-            disabled={isDisabled}
-            onCheckedChange={(checked) => {
-              form.setValue(
-                fieldName,
-                checked as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >,
-                { shouldValidate: true }
-              );
-            }}
-          />
-        );
-
-      case "radio":
-        return (
-          <RadioCards.Root
-            size={"3"}
-            value={currentValue == null ? undefined : String(currentValue)}
-            disabled={isDisabled}
-            onValueChange={(value) => {
-              form.setValue(
-                fieldName,
-                value as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >,
-                { shouldValidate: true }
-              );
-            }}
-          >
-            {fieldConfig.enhancedOptions?.map((option) => {
-              const value = typeof option === "string" ? option : option.value;
-              const label =
-                typeof option === "string"
-                  ? startCase(option)
-                  : option.label || startCase(option.value);
-              const description =
-                typeof option === "string" ? undefined : option.description;
-
-              return (
-                <RadioCards.Item key={value} value={value}>
-                  <Flex direction="column" width="100%">
-                    <Text weight="bold">{label}</Text>
-                    {description && (
-                      <Text size="2" color="gray">
-                        {description}
-                      </Text>
-                    )}
-                  </Flex>
-                </RadioCards.Item>
-              );
-            })}
-          </RadioCards.Root>
-        );
-
-      case "select":
-        return (
-          <Select.Root
-            size={"3"}
-            value={currentValue == null ? undefined : String(currentValue)}
-            disabled={isDisabled}
-            onValueChange={(value) => {
-              form.setValue(
-                fieldName,
-                value as PathValue<
-                  z.output<TSchemaType>,
-                  Path<z.output<TSchemaType>>
-                >,
-                { shouldValidate: true }
-              );
-            }}
-          >
-            <Select.Trigger className="w-full" placeholder={placeholder} />
-            <ErrorBoundary
-              FallbackComponent={(props) => {
-                console.error("[select-error]:", props.error);
-                return <></>;
-              }}
-            >
-              <Select.Content className="z-50">
-                {fieldConfig.enhancedOptions?.map((option) => {
-                  const value =
-                    typeof option === "string" ? option : option.value;
-                  const label =
-                    typeof option === "string"
-                      ? startCase(option)
-                      : option.label || startCase(option.value);
-
-                  return (
-                    <Select.Item key={value} value={value}>
-                      {label}
-                    </Select.Item>
-                  );
-                })}
-              </Select.Content>
-            </ErrorBoundary>
-          </Select.Root>
-        );
-
-      case "text":
-      case "email":
-      case "password":
-      case "url": {
-        const showCharCount =
-          ["text", "password", "url"].includes(type) && !!maxLength;
-        return (
-          <TextField.Root
-            size="3"
-            type={type}
-            placeholder={placeholder}
-            maxLength={maxLength}
-            id={String(fieldName)}
-            {...commonProps}
-            {...form.register(fieldName)}
-          >
-            {showCharCount && (
-              <TextField.Slot side="right">
-                <Badge color="gray" variant="soft">
-                  {String(currentValue || "").length} / {maxLength}
-                </Badge>
-              </TextField.Slot>
-            )}
-          </TextField.Root>
-        );
-      }
-
-      case "date":
-      case "time":
-      case "datetime-local": {
-        return (
-          <TextField.Root
-            size="3"
-            type={type}
-            placeholder={placeholder}
-            id={String(fieldName)}
-            {...commonProps}
-            {...form.register(fieldName, {
-              setValueAs: (v) => {
-                if (!v) return undefined;
-                try {
-                  return new Date(v);
-                } catch {
-                  return undefined;
-                }
-              },
-            })}
-          />
-        );
-      }
-
-      case "number": {
-        const showControls = !!meta?.withControls;
-        return (
-          <TextField.Root
-            size="3"
-            type="number"
-            placeholder={placeholder}
-            id={String(fieldName)}
-            {...commonProps}
-            {...form.register(fieldName, {
-              setValueAs: (v) =>
-                v === "" || v == null ? undefined : Number(v),
-            })}
-          >
-            {showControls && (
-              <TextField.Slot side="right">
-                <div className="flex items-center gap-1">
-                  <IconButton
-                    variant="soft"
-                    size="1"
-                    type="button"
-                    disabled={
-                      isDisabled ||
-                      isReadOnly ||
-                      (fieldConfig.greaterThan
-                        ? fieldConfig.greaterThan.inclusive
-                          ? Number(currentValue) <=
-                            fieldConfig.greaterThan.value
-                          : Number(currentValue) < fieldConfig.greaterThan.value
-                        : false)
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const curr = Number(currentValue ?? 0);
-                      const next = !fieldConfig.greaterThan
-                        ? (Number.isNaN(curr) ? 0 : curr) -
-                          (fieldConfig.meta?.step || 1)
-                        : Math.max(
-                            (Number.isNaN(curr) ? 0 : curr) -
-                              (fieldConfig.meta?.step || 1),
-                            fieldConfig.greaterThan.value
-                          );
-                      form.setValue(
-                        fieldName,
-                        next as PathValue<
-                          z.output<TSchemaType>,
-                          Path<z.output<TSchemaType>>
-                        >,
-                        { shouldValidate: true }
-                      );
-                    }}
-                    aria-label="Decrement"
-                    title="Decrement"
-                  >
-                    <MinusIcon />
-                  </IconButton>
-                  <IconButton
-                    variant="soft"
-                    size="1"
-                    type="button"
-                    disabled={
-                      isDisabled ||
-                      isReadOnly ||
-                      (fieldConfig.lessThan
-                        ? fieldConfig.lessThan.inclusive
-                          ? Number(currentValue) >= fieldConfig.lessThan.value
-                          : Number(currentValue) > fieldConfig.lessThan.value
-                        : false)
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const curr = Number(currentValue ?? 0);
-                      const next = !fieldConfig.lessThan
-                        ? (Number.isNaN(curr) ? 0 : curr) +
-                          (fieldConfig.meta?.step || 1)
-                        : Math.min(
-                            (Number.isNaN(curr) ? 0 : curr) +
-                              (fieldConfig.meta?.step || 1),
-                            fieldConfig.lessThan.value
-                          );
-                      form.setValue(
-                        fieldName,
-                        next as PathValue<
-                          z.output<TSchemaType>,
-                          Path<z.output<TSchemaType>>
-                        >,
-                        { shouldValidate: true }
-                      );
-                    }}
-                    aria-label="Increment"
-                    title="Increment"
-                  >
-                    <PlusIcon />
-                  </IconButton>
-                </div>
-              </TextField.Slot>
-            )}
-          </TextField.Root>
-        );
-      }
-
-      case "unknown":
-        return <div>Unsupported field type. Use a custom controller.</div>;
-
-      default:
-        console.warn(
-          `AutoForm: Unsupported field type "${type}" for key "${key}". Rendering default text input.`
-        );
-        return (
-          <TextField.Root
-            size="3"
-            type="text"
-            placeholder={placeholder}
-            {...commonProps}
-            {...form.register(fieldName)}
-          />
-        );
-    }
-  };
-
-  // Determine which fields to render (and in which order) and group them.
   const fieldsToRender: Array<FieldConfig> =
     selectedFieldKeys && selectedFieldKeys.length > 0
       ? (selectedFieldKeys
@@ -670,13 +271,16 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           )}
         >
           {group.map((fieldConfig) => {
-            const { key, type, label, meta } = fieldConfig;
+            const { key, meta } = fieldConfig;
             const fieldName = key as Path<z.infer<TSchemaType>>;
 
             const isHidden = evaluateConditional(meta?.hidden, false);
             if (isHidden) return null;
 
             const defaultRender = () => {
+              const params = createControllerParams(fieldConfig, fieldName);
+              const defaultController = params.defaultController;
+
               return (
                 <FormField
                   key={key}
@@ -684,11 +288,13 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                   name={fieldName}
                   render={() => (
                     <FormItem className="w-full flex flex-col">
-                      {type === "switch" ? (
+                      {fieldConfig.type === "switch" ? (
                         <div className="flex flex-row items-center justify-between space-x-3 py-4">
                           {labels && (
                             <Flex direction={"column"} gap={"1"}>
-                              <FormLabel htmlFor={key}>{label}</FormLabel>
+                              <FormLabel htmlFor={key}>
+                                {fieldConfig.label}
+                              </FormLabel>
                               {meta?.description && (
                                 <Text size="2" color="gray">
                                   {meta.description}
@@ -698,16 +304,16 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                           )}
                           <FormControl>
                             {meta?.controller
-                              ? meta.controller(
-                                  createControllerParams(fieldConfig, fieldName)
-                                )
-                              : renderFormControl(fieldConfig)}
+                              ? meta.controller(params)
+                              : defaultController}
                           </FormControl>
                         </div>
                       ) : (
                         <>
                           {labels && (
-                            <FormLabel htmlFor={key}>{label}</FormLabel>
+                            <FormLabel htmlFor={key}>
+                              {fieldConfig.label}
+                            </FormLabel>
                           )}
                           <ErrorBoundary
                             FallbackComponent={(props) => {
@@ -719,13 +325,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                           >
                             <FormControl>
                               {meta?.controller
-                                ? meta.controller(
-                                    createControllerParams(
-                                      fieldConfig,
-                                      fieldName
-                                    )
-                                  )
-                                : renderFormControl(fieldConfig)}
+                                ? meta.controller(params)
+                                : defaultController}
                             </FormControl>
                           </ErrorBoundary>
                           {meta?.description && (
@@ -743,46 +344,24 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             };
 
             if (meta?.renderer) {
-              const fieldState = form.getFieldState(fieldName);
-              const currentValue = form.watch(fieldName);
-
+              const params = createControllerParams(fieldConfig, fieldName);
               const controllerComponent = meta?.controller
-                ? meta.controller(
-                    createControllerParams(fieldConfig, fieldName)
-                  )
-                : renderFormControl(fieldConfig);
+                ? meta.controller<FV>(params)
+                : params.defaultController;
 
               return meta.renderer({
                 fieldConfig,
                 meta,
-                field: {
-                  name: fieldName,
-                  value: currentValue,
-                  onChange: (value: unknown) => {
-                    form.setValue(
-                      fieldName,
-                      value as PathValue<
-                        z.output<TSchemaType>,
-                        Path<z.output<TSchemaType>>
-                      >,
-                      { shouldValidate: true }
-                    );
-                  },
-                  onBlur: () => form.trigger(fieldName),
-                },
-                fieldState: {
-                  invalid: !!fieldState.error,
-                  error: fieldState.error,
-                },
-                formState: {
-                  isSubmitting: form.formState.isSubmitting,
-                  isLoading: form.formState.isLoading,
-                },
+                field: params.field,
+                fieldState: params.fieldState,
+                formState: params.formState,
                 labels,
                 controller: controllerComponent,
                 defaultRender,
+                ui: params.ui,
               });
             }
+
             return renderField
               ? renderField({
                   field: fieldConfig,
