@@ -1,44 +1,14 @@
 import type React from "react";
-
-import { useRef, useEffect, useState } from "react";
-
-import { IconButton, Text, Dialog, Flex } from "@radix-ui/themes";
-import { Cross1Icon, FileIcon, UploadIcon } from "@radix-ui/react-icons";
-
+import { useEffect, useRef, useState } from "react";
+import { Dialog, Flex, IconButton, Text, Tooltip } from "@radix-ui/themes";
+import {
+  Cross1Icon,
+  FileIcon,
+  InfoCircledIcon,
+  UploadIcon,
+} from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-};
-
-const isImageFile = (file: File): boolean => {
-  return file.type.startsWith("image/");
-};
-
-const createImagePreview = (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.readAsDataURL(file);
-  });
-};
-
-const mimeToExt = (mime: string): string => {
-  if (!mime) return "bin";
-  const mapping: Record<string, string> = {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/jpg": "jpg",
-    "image/webp": "webp",
-    "image/gif": "gif",
-    "application/pdf": "pdf",
-  };
-  return mapping[mime] || mime.split("/")[1] || "bin";
-};
+import { formatFileSize, isImageFile, mimeToExt } from "./helpers";
 
 const ImageThumbnail = ({
   file,
@@ -47,12 +17,16 @@ const ImageThumbnail = ({
   file: File;
   onClick: () => void;
 }) => {
-  const [thumbnail, setThumbnail] = useState<string>("");
+  const [src, setSrc] = useState("");
 
   useEffect(() => {
-    if (isImageFile(file)) {
-      createImagePreview(file).then(setThumbnail);
+    if (!isImageFile(file)) {
+      setSrc("");
+      return;
     }
+    const url = URL.createObjectURL(file);
+    setSrc(url);
+    return () => URL.revokeObjectURL(url);
   }, [file]);
 
   if (!isImageFile(file)) {
@@ -68,9 +42,9 @@ const ImageThumbnail = ({
       className="cursor-pointer rounded-[max(var(--radius-full),var(--radius-2))] overflow-hidden border border-[var(--gray-6)]"
       onClick={onClick}
     >
-      {thumbnail ? (
+      {src ? (
         <img
-          src={thumbnail}
+          src={src}
           alt={file.name}
           className="h-[var(--space-5)] w-[var(--space-5)] object-cover flex-shrink-0"
         />
@@ -87,43 +61,44 @@ export const UploadPreview = ({
   file,
   handleImagePreview,
   removeFile,
+  disabled,
 }: {
   file: File;
   handleImagePreview: () => void;
   removeFile: () => void;
-}) => {
-  return (
-    <div className="h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]">
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <ImageThumbnail file={file} onClick={() => handleImagePreview()} />
-        <Text as="div" size="2" className="font-medium truncate">
-          {file.name}
-        </Text>
-        <Text as="div"> - </Text>
-        <Text as="div" size="1" color="gray">
-          {formatFileSize(file.size)}
-        </Text>
-      </div>
-      <IconButton
-        type="button"
-        variant="ghost"
-        size="1"
-        onClick={() => removeFile()}
-        className="flex-shrink-0 ml-2"
-      >
-        <Cross1Icon className="w-4 h-4" />
-      </IconButton>
+  disabled?: boolean;
+}) => (
+  <div className="h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]">
+    <div className="flex items-center gap-2 flex-1 min-w-0">
+      <ImageThumbnail file={file} onClick={handleImagePreview} />
+      <Text as="div" size="2" className="font-medium truncate">
+        {file.name}
+      </Text>
+      <Text as="div"> - </Text>
+      <Text as="div" size="1" color="gray">
+        {formatFileSize(file.size)}
+      </Text>
     </div>
-  );
-};
+    <IconButton
+      type="button"
+      variant="ghost"
+      size="1"
+      onClick={removeFile}
+      className="flex-shrink-0 ml-2"
+      disabled={disabled}
+    >
+      <Cross1Icon className="w-4 h-4" />
+    </IconButton>
+  </div>
+);
 
 export interface FileUploadProps {
   value?: Array<File>;
   onChange: (files: Array<File>) => void;
   multiple?: boolean;
   accept?: string;
-  minSize?: number; // in bytes
-  maxSize?: number; // in bytes
+  minSize?: number;
+  maxSize?: number;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -132,146 +107,136 @@ export interface FileUploadProps {
 export function FileUpload({
   value = [],
   onChange,
+  multiple = false,
   accept,
-  minSize = 1, // 1 Byte
-  maxSize = 10 * 1024 * 1024, // 10MB
+  minSize = 1,
+  maxSize = 10 * 1024 * 1024,
   disabled = false,
   placeholder = "Choose file(s) or drag and drop",
   className,
 }: FileUploadProps) {
+  const isMultiple = !!multiple;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dragActive, setDragActive] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  const handleImagePreview = async (file: File) => {
-    if (isImageFile(file)) {
-      setIsPreviewLoading(true);
-      setIsPreviewOpen(true);
-      try {
-        const preview = await createImagePreview(file);
-        setPreviewImage(preview);
-      } finally {
-        setIsPreviewLoading(false);
-      }
-    }
+  const setTransientError = (msg: string) => {
+    setError(msg);
+    setTimeout(() => setError(""), 3000);
   };
 
-  const isDuplicateFile = (
-    newFile: File,
-    existingFiles: Array<File>
-  ): boolean => {
-    return existingFiles.some(
-      (existingFile) =>
-        existingFile.name === newFile.name &&
-        existingFile.size === newFile.size &&
-        existingFile.lastModified === newFile.lastModified
-    );
+  const handleImagePreview = (file: File) => {
+    if (!isImageFile(file)) return;
+    setIsPreviewLoading(true);
+    setIsPreviewOpen(true);
+    const url = URL.createObjectURL(file);
+    setPreviewImage(url);
+    setIsPreviewLoading(false);
   };
+
+  const isDuplicateFile = (a: File, list: Array<File>) =>
+    list.some(
+      (b) =>
+        b.name === a.name &&
+        b.size === a.size &&
+        b.lastModified === a.lastModified
+    );
 
   const validateFiles = (
     files: FileList | Array<File>
   ): { valid: Array<File>; errors: Array<string> } => {
-    const validFiles: Array<File> = [];
-    const errors: Array<string> = [];
+    const valid: File[] = [];
+    const errors: string[] = [];
 
-    Array.from(files).forEach((file) => {
-      if (file.size > maxSize) {
+    Array.from(files).forEach((f) => {
+      if (f.size > maxSize) {
+        errors.push(`${f.name}: File size exceeds ${formatFileSize(maxSize)}`);
+      } else if (f.size < minSize) {
         errors.push(
-          `${file.name}: File size exceeds ${formatFileSize(maxSize)}`
+          `${f.name}: File size must exceed ${formatFileSize(minSize)}`
         );
-        return;
+      } else if (isMultiple && isDuplicateFile(f, value)) {
+        errors.push(`${f.name}: File already uploaded`);
+      } else {
+        valid.push(f);
       }
-
-      if (file.size < minSize) {
-        errors.push(
-          `${file.name}: File size must exceed ${formatFileSize(minSize)}`
-        );
-        return;
-      }
-
-      if (isDuplicateFile(file, value)) {
-        errors.push(`${file.name}: File already uploaded`);
-        return;
-      }
-
-      validFiles.push(file);
     });
 
-    return { valid: validFiles, errors };
+    return { valid, errors };
   };
 
-  // Single path to process files regardless of source (input, drop, paste)
   const processFiles = (files: FileList | Array<File>) => {
     const { valid, errors } = validateFiles(files);
+    if (errors.length) setTransientError(errors[0]);
 
-    if (errors.length > 0) {
-      setError(errors[0]);
-      setTimeout(() => setError(""), 3000);
-    }
+    if (!valid.length) return;
 
-    if (valid.length > 0) {
-      const newFiles = [...value, ...valid];
-      onChange(newFiles);
-      setError("");
+    if (isMultiple) {
+      onChange([...value, ...valid]);
+    } else {
+      onChange([valid[0]]);
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    // const { valid, errors } = validateFiles(files);
-
-    // if (errors.length > 0) {
-    //   setError(errors[0]);
-    //   setTimeout(() => setError(""), 3000);
-    // }
-
-    // if (valid.length > 0) {
-    //   const newFiles = [...value, ...valid];
-    //   onChange(newFiles);
-    //   setError("");
-    // }
-
-    processFiles(files);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files?.length) processFiles(files);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    if (disabled) return;
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
     if (disabled) return;
-
-    const files = e.dataTransfer.files;
-    if (files.length === 0) return;
-
-    processFiles(files);
+    if (e.dataTransfer.files.length) {
+      processFiles(
+        isMultiple ? e.dataTransfer.files : [e.dataTransfer.files[0]]
+      );
+    }
   };
 
-  // Handle CtrlV anywhere on the page (except when typing in inputs)
+  const filesFromDT = (dt: DataTransfer | null): File[] => {
+    if (!dt) return [];
+    if (dt.files && dt.files.length)
+      return Array.from(isMultiple ? dt.files : [dt.files[0]]);
+
+    const out: File[] = [];
+    if (dt.items && dt.items.length) {
+      for (const item of Array.from(dt.items)) {
+        if (item.kind === "file") {
+          const f = item.getAsFile?.();
+          if (f) {
+            const needsName = !f.name || !f.name.trim();
+            const named = needsName
+              ? new File([f], `pasted-${Date.now()}.${mimeToExt(f.type)}`, {
+                  type: f.type,
+                  lastModified: Date.now(),
+                })
+              : f;
+            out.push(named);
+            if (!isMultiple) break;
+          }
+        }
+      }
+    }
+    return out;
+  };
+
   useEffect(() => {
     const onWindowPaste = (e: ClipboardEvent) => {
       if (disabled) return;
-
       const active = document.activeElement as HTMLElement | null;
       if (
         active &&
@@ -279,177 +244,184 @@ export function FileUpload({
           active.tagName === "TEXTAREA" ||
           active.isContentEditable)
       ) {
-        // Let normal text paste happen in editable controls
         return;
       }
-
-      const dt = e.clipboardData;
-      if (!dt) return;
-
-      const files: File[] = [];
-
-      if (dt.files && dt.files.length > 0) {
-        files.push(...Array.from(dt.files));
-      } else if (dt.items && dt.items.length > 0) {
-        for (const item of Array.from(dt.items)) {
-          if (item.kind === "file") {
-            const f = item.getAsFile?.();
-            if (f) {
-              const needsName = !f.name || f.name.trim().length === 0;
-              const name = needsName
-                ? `pasted-${Date.now()}.${mimeToExt(f.type)}`
-                : f.name;
-              files.push(
-                needsName
-                  ? new File([f], name, {
-                      type: f.type,
-                      lastModified: Date.now(),
-                    })
-                  : f
-              );
-            }
-          }
-        }
-      }
-
-      if (files.length > 0) {
+      const files = filesFromDT(e.clipboardData || null);
+      if (files.length) {
         e.preventDefault();
-        processFiles(files); // reuse your existing flow
+        processFiles(files);
       }
     };
-
     window.addEventListener("paste", onWindowPaste);
     return () => window.removeEventListener("paste", onWindowPaste);
-  }, [disabled, value, onChange]);
+  }, [disabled, value, onChange, minSize, maxSize, isMultiple]);
 
-  // Handle Ctrl+V paste of files/images as if dropped
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (disabled) return;
-    const dt = e.clipboardData;
-    const pastedFiles: File[] = [];
-
-    if (dt.files && dt.files.length > 0) {
-      pastedFiles.push(...Array.from(dt.files));
-    } else if (dt.items && dt.items.length > 0) {
-      for (const item of Array.from(dt.items)) {
-        if (item.kind === "file") {
-          const file = item.getAsFile?.();
-          if (file) {
-            const needsName = !file.name || file.name.trim().length === 0;
-            const name = needsName
-              ? `pasted-${Date.now()}.${mimeToExt(file.type)}`
-              : file.name;
-            const finalized = needsName
-              ? new File([file], name, {
-                  type: file.type,
-                  lastModified: Date.now(),
-                })
-              : file;
-            pastedFiles.push(finalized);
-          }
-        }
-      }
-    }
-
-    if (pastedFiles.length > 0) {
+    const files = filesFromDT(e.clipboardData || null);
+    if (files.length) {
       e.preventDefault();
-      processFiles(pastedFiles);
+      processFiles(files);
     }
   };
 
-  const removeFile = (index: number) => {
-    const newFiles = value.filter((_, i) => i !== index);
-    onChange(newFiles);
+  const removeAtIndex = (i: number) => {
+    // if (disabled) return;
+    onChange(value.filter((_, idx) => idx !== i));
   };
 
-  const openFileDialog = () => {
-    if (!disabled && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const clearSingle = () => {
+    if (disabled) return;
+    onChange([]);
   };
+
+  const openFileDialog = () => !disabled && fileInputRef.current?.click();
+
+  const acceptSummary = accept
+    ? `Accepted: ${accept}`
+    : "All file types accepted";
+
+  // Single-file current
+  const current = !isMultiple && value.length ? value[0] : undefined;
 
   return (
     <div className={cn("w-full", className)}>
-      {/* File List - Show uploaded files */}
-      {value.length > 0 && (
-        <div className="mb-3 space-y-2">
-          <>
-            {value.map((file, index) => (
-              <UploadPreview
-                file={file}
-                key={`${file.name}-${file.size}-${file.lastModified}`}
-                handleImagePreview={() => handleImagePreview(file)}
-                removeFile={() => removeFile(index)}
-              />
-            ))}
-          </>
-        </div>
-      )}
+      {isMultiple ? (
+        <>
+          {value.length > 0 && (
+            <div className="mb-3 space-y-2">
+              {value.map((file, index) => (
+                <UploadPreview
+                  key={`${file.name}-${file.size}-${file.lastModified}`}
+                  file={file}
+                  handleImagePreview={() => handleImagePreview(file)}
+                  removeFile={() => removeAtIndex(index)}
+                  // disabled={disabled}
+                />
+              ))}
+            </div>
+          )}
 
-      {/* Upload Area */}
-      <div
-        className={cn(
-          "relative border-2 border-dashed rounded-[max(var(--radius-2),var(--radius-full))] p-6 text-center transition-colors",
-          dragActive && !disabled
-            ? "border-blue-400 bg-blue-50"
-            : "border-gray-300 bg-gray-50",
-          disabled && "opacity-50 cursor-not-allowed",
-          !disabled && "hover:border-gray-400 cursor-pointer"
-        )}
-        tabIndex={0}
-        onPaste={handlePaste}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={openFileDialog}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple={true}
-          accept={accept}
-          onChange={handleFileChange}
-          disabled={disabled}
-          className="hidden"
-          // className="absolute inset-0 w-full h-full opacity-100 cursor-pointer"
-          // style={{ fontSize: 0 }}
-        />
-
-        <div className="flex flex-col items-center space-y-2">
-          <UploadIcon className="w-8 h-8 text-gray-400" />
-          <div>
-            <Text size="3" className="font-medium text-gray-700">
-              {placeholder}
-            </Text>
-            <Text size="2" color="gray" className="block mt-1">
-              {accept ? `Accepted: ${accept}` : "All file types accepted"} • Min{" "}
-              {formatFileSize(minSize)} • Max {formatFileSize(maxSize)}
-            </Text>
+          <div
+            className={cn(
+              "relative border-2 border-dashed rounded-[max(var(--radius-2),var(--radius-full))] p-6 text-center transition-colors",
+              dragActive && !disabled
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-300 bg-gray-50",
+              disabled && "opacity-50 cursor-not-allowed",
+              !disabled && "hover:border-gray-400 cursor-pointer"
+            )}
+            tabIndex={0}
+            onPaste={handlePaste}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={openFileDialog}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple={isMultiple}
+              accept={accept}
+              onChange={handleFileChange}
+              disabled={disabled}
+              className="hidden"
+            />
+            <div className="flex flex-col items-center space-y-2">
+              <UploadIcon className="w-8 h-8 text-gray-400" />
+              <div>
+                <Text size="3" className="font-medium text-gray-700">
+                  {placeholder}
+                </Text>
+                <Text size="2" color="gray" className="block mt-1">
+                  {acceptSummary} • Min {formatFileSize(minSize)} • Max{" "}
+                  {formatFileSize(maxSize)}
+                </Text>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Uploaded Files Summary */}
-      {value.length > 0 && (
-        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-          {value.length} file{value.length === 1 ? "" : "s"} uploaded
-        </div>
+          {value.length > 0 && (
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+              {value.length} file{value.length === 1 ? "" : "s"} uploaded
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {current ? (
+            <div className="space-y-2">
+              <UploadPreview
+                file={current}
+                handleImagePreview={() => handleImagePreview(current)}
+                removeFile={clearSingle}
+                disabled={disabled}
+              />
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]",
+                // "relative rounded-[max(var(--radius-2),var(--radius-full))] px-[var(--space-3)] py-[var(--space-4)] transition-colors",
+                "border border-[var(--gray-7)] bg-gray-50",
+                dragActive && !disabled
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-[var(--gray-7)] bg-gray-50",
+                disabled && "opacity-50 cursor-not-allowed",
+                !disabled && "hover:border-gray-400 cursor-pointer"
+              )}
+              tabIndex={0}
+              onPaste={handlePaste}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={openFileDialog}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple={false}
+                accept={accept}
+                onChange={handleFileChange}
+                disabled={disabled}
+                className="hidden"
+              />
+              <div className="w-full flex flex-row items-center justify-between gap-2">
+                <div className="flex flex-row items-center gap-2">
+                  <UploadIcon color="gray" />
+                  <Text size="3" color="gray" className="font-medium">
+                    {placeholder}
+                  </Text>
+                </div>
+                <Tooltip
+                  content={`Accepted: ${
+                    accept || "All file types"
+                  } • Min ${formatFileSize(minSize)} • Max ${formatFileSize(
+                    maxSize
+                  )}`}
+                >
+                  <InfoCircledIcon />
+                </Tooltip>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
           {error}
         </div>
       )}
 
-      {/* Image Preview Dialog */}
       <Dialog.Root
         open={isPreviewOpen}
         onOpenChange={(open) => {
           setIsPreviewOpen(open);
           if (!open) {
+            if (previewImage) URL.revokeObjectURL(previewImage);
             setPreviewImage(null);
             setIsPreviewLoading(false);
           }
@@ -459,7 +431,6 @@ export function FileUpload({
           style={{ maxWidth: "95vw", maxHeight: "95vh", padding: 0 }}
           className="relative overflow-hidden"
         >
-          {/* Close button in top right */}
           <Dialog.Close>
             <IconButton
               variant="soft"
@@ -484,7 +455,6 @@ export function FileUpload({
             Image Preview
           </Dialog.Description>
 
-          {/* Image container */}
           <Flex
             justify="center"
             align="center"
