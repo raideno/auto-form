@@ -19,15 +19,16 @@ export const CodePreview = ({ code }: CodePreviewProps) => {
         <Flex gap="2"></Flex>
       </Flex>
 
-      <Box className="relative">
-        <pre className="bg-gray-50 border border-gray-200 rounded-t-lg p-4 overflow-hidden">
+      <Box className="bg-[var(--gray-2)] relative overflow-hidden rounded-[max(var(--radius-2),var(--radius-full))] border border-[var(--gray-7)]">
+        <pre className="border-b border-b-[var(--gray-7)] p-4 overflow-hidden">
           <code className="text-sm flex flex-row items-center gap-1">
-            <FileType width={16} height={16} className="text-blue-600" />
-            <span className="text-blue-600">app.tsx</span>{" "}
+            <FileType color="blue" width={16} height={16} />
+            <Text color="blue">app.tsx</Text>{" "}
           </code>
         </pre>
 
         <Editor
+          theme="light"
           options={{
             minimap: { enabled: false },
             lineNumbers: "off",
@@ -38,7 +39,7 @@ export const CodePreview = ({ code }: CodePreviewProps) => {
           }}
           defaultValue={code}
           language="javascript"
-          className="w-full h-80 p-4 border-l border-r border-b border-gray-200 rounded-b-lg font-mono text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full h-80 font-mono text-sm resize-none"
         />
       </Box>
     </Box>

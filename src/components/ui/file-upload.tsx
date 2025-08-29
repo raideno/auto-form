@@ -68,7 +68,7 @@ export const UploadPreview = ({
   removeFile: () => void;
   disabled?: boolean;
 }) => (
-  <div className="h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]">
+  <div className="h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-[var(--gray-4)] rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]">
     <div className="flex items-center gap-2 flex-1 min-w-0">
       <ImageThumbnail file={file} onClick={handleImagePreview} />
       <Text as="div" size="2" className="font-medium truncate">
@@ -302,14 +302,17 @@ export function FileUpload({
             </div>
           )}
 
+          <div className="bg-[var(--accent-9)] border-[var(--gray-7)]"></div>
+
           <div
             className={cn(
-              "relative border-2 border-dashed rounded-[max(var(--radius-2),var(--radius-full))] p-6 text-center transition-colors",
-              dragActive && !disabled
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 bg-gray-50",
-              disabled && "opacity-50 cursor-not-allowed",
-              !disabled && "hover:border-gray-400 cursor-pointer"
+              "rounded-[max(var(--radius-2),var(--radius-full))] p-6 relative text-center transition-colors",
+              "border-2 border-dashed border-[var(--gray-7)] bg-[var(--gray-2)]",
+              "hover:border-[var(--gray-9)] cursor-pointer",
+              dragActive &&
+                !disabled &&
+                "border-[var(--accent-9)] bg-[var(--accent-9)]",
+              disabled && "opacity-50 cursor-not-allowed"
             )}
             tabIndex={0}
             onPaste={handlePaste}
@@ -329,9 +332,9 @@ export function FileUpload({
               className="hidden"
             />
             <div className="flex flex-col items-center space-y-2">
-              <UploadIcon className="w-8 h-8 text-gray-400" />
+              <UploadIcon color="gray" className="w-8 h-8" />
               <div>
-                <Text size="3" className="font-medium text-gray-700">
+                <Text size="3" className="font-medium">
                   {placeholder}
                 </Text>
                 <Text size="2" color="gray" className="block mt-1">
@@ -341,12 +344,6 @@ export function FileUpload({
               </div>
             </div>
           </div>
-
-          {value.length > 0 && (
-            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-              {value.length} file{value.length === 1 ? "" : "s"} uploaded
-            </div>
-          )}
         </>
       ) : (
         <>
@@ -362,14 +359,13 @@ export function FileUpload({
           ) : (
             <div
               className={cn(
-                "h-[var(--space-7)] flex items-center justify-between p-[var(--space-3)] bg-gray-50 rounded-[max(var(--radius-2),var(--radius-full))] border border-solid border-[var(--gray-7)]",
-                // "relative rounded-[max(var(--radius-2),var(--radius-full))] px-[var(--space-3)] py-[var(--space-4)] transition-colors",
-                "border border-[var(--gray-7)] bg-gray-50",
-                dragActive && !disabled
-                  ? "border-blue-400 bg-blue-50"
-                  : "border-[var(--gray-7)] bg-gray-50",
-                disabled && "opacity-50 cursor-not-allowed",
-                !disabled && "hover:border-gray-400 cursor-pointer"
+                "flex items-center justify-between",
+                "h-[var(--space-7)] p-[var(--space-3)] rounded-[max(var(--radius-2),var(--radius-full))]",
+                "border border-[var(--gray-7)] bg-[var(--gray-2)] hover:border-[var(--gray-4)] cursor-pointer",
+                dragActive &&
+                  !disabled &&
+                  "border-[var(--accent-7)] bg-[var(--accent-2)]",
+                disabled && "opacity-50 cursor-not-allowed"
               )}
               tabIndex={0}
               onPaste={handlePaste}
@@ -411,7 +407,7 @@ export function FileUpload({
       )}
 
       {error && (
-        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+        <div className="mt-2 p-2 bg-[var(--red-4)] border border-[var(--red-2)] rounded text-sm text-[var(--red-9)]">
           {error}
         </div>
       )}
