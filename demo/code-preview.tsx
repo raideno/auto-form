@@ -1,12 +1,16 @@
 import Editor from "@monaco-editor/react";
 import { FileType } from "lucide-react";
-import { Box, Flex, Heading, Text } from "@radix-ui/themes";
+import { Box, Flex, Heading, Text, useThemeContext } from "@radix-ui/themes";
 
 interface CodePreviewProps {
   code: string;
 }
 
 export const CodePreview = ({ code }: CodePreviewProps) => {
+  const theme = useThemeContext();
+
+  const editorTheme = theme.appearance === "dark" ? "vs-dark" : "light";
+
   return (
     <Box>
       <Flex justify="between" align="center" mb="3">
@@ -28,7 +32,7 @@ export const CodePreview = ({ code }: CodePreviewProps) => {
         </pre>
 
         <Editor
-          theme="light"
+          theme={editorTheme}
           options={{
             minimap: { enabled: false },
             lineNumbers: "off",
