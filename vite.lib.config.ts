@@ -34,7 +34,7 @@ export default defineConfig({
         zod: path.resolve(__dirname, "lib/zod.ts"),
         controllers: path.resolve(__dirname, "lib/controllers.ts"),
       },
-      formats: ["es"],
+      formats: ["es", "cjs"],
     },
     outDir: "dist/lib",
     rollupOptions: {
