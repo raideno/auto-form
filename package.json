@@ -1,32 +1,47 @@
 {
   "name": "@raideno/auto-form",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Generate forms automatically from Zod schemas with built-in validation and customizable field types",
   "type": "module",
+  "main": "./dist/lib/ui.cjs",
+  "module": "./dist/lib/ui.js",
+  "types": "./dist/lib/ui.d.ts",
+  "typesVersions": {
+    "*": {
+      "controllers": [
+        "./dist/lib/controllers.d.ts"
+      ],
+      "ui": [
+        "./dist/lib/ui.d.ts"
+      ],
+      "registry": [
+        "./dist/lib/registry.d.ts"
+      ],
+      "zod": [
+        "./dist/lib/zod.d.ts"
+      ]
+    }
+  },
   "exports": {
     "./controllers": {
       "types": "./dist/lib/controllers.d.ts",
       "import": "./dist/lib/controllers.js",
-      "require": "./dist/lib/controllers.cjs",
-      "default": "./dist/lib/controllers.js"
+      "require": "./dist/lib/controllers.cjs"
     },
     "./ui": {
       "types": "./dist/lib/ui.d.ts",
       "import": "./dist/lib/ui.js",
-      "require": "./dist/lib/ui.cjs",
-      "default": "./dist/lib/ui.js"
+      "require": "./dist/lib/ui.cjs"
     },
     "./registry": {
       "types": "./dist/lib/registry.d.ts",
       "import": "./dist/lib/registry.js",
-      "require": "./dist/lib/registry.cjs",
-      "default": "./dist/lib/registry.js"
+      "require": "./dist/lib/registry.cjs"
     },
     "./zod": {
       "types": "./dist/lib/zod.d.ts",
       "import": "./dist/lib/zod.js",
-      "require": "./dist/lib/zod.cjs",
-      "default": "./dist/lib/zod.js"
+      "require": "./dist/lib/zod.cjs"
     },
     "./styles.css": "./dist/lib/auto-form.css"
   },
