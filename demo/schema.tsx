@@ -15,6 +15,7 @@ export const INITIAL_SCHEMA_CODE = z_.object({
       withControls: true,
       step: 10,
       placeholder: "100",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       controller: PriceController as any,
     }),
   description: z_

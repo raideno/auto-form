@@ -157,7 +157,10 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   renderField,
   fields: selectedFieldKeys,
 }: ContentProps_<TSchemaType>) {
-  const { form, fields: allFields, labels } = useAutoForm<TSchemaType>();
+  const context = useAutoForm<TSchemaType>();
+
+  const { form, fields: allFields, labels } = context;
+
   const values = form.watch();
 
   const evaluateConditional = <T,>(
@@ -204,7 +207,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const baseParams: BaseParams = {
-      form: form as never,
+      context,
       fieldConfig,
       meta: fieldConfig.meta,
       name: fieldName,
@@ -353,6 +356,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                 : params.defaultController;
 
               return meta.renderer({
+                context,
                 fieldConfig,
                 meta,
                 field: params.field,
