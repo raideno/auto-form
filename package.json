@@ -1,6 +1,6 @@
 {
   "name": "@raideno/auto-form",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "description": "Generate forms automatically from Zod schemas with built-in validation and customizable field types",
   "type": "module",
   "main": "./dist/lib/ui.cjs",

@@ -120,6 +120,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         {
           form,
           schema,
+          isSubmitLoading: form.formState.isSubmitting,
           isCancelLoading,
           handleSubmit: handleSubmitWrapper,
           handleCancel: handleCancelWrapper,
@@ -195,6 +196,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       ) =>
         form.setValue(name, value, options);
 
+    const getContext = () => context;
+
     const fieldState = form.getFieldState(fieldName);
     const currentValue = form.watch(fieldName);
 
@@ -207,7 +210,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const baseParams: BaseParams = {
-      context,
+      context: getContext,
       fieldConfig,
       meta: fieldConfig.meta,
       name: fieldName,
@@ -356,7 +359,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                 : params.defaultController;
 
               return meta.renderer({
-                context,
                 fieldConfig,
                 meta,
                 field: params.field,

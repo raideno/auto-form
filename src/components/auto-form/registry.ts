@@ -17,8 +17,6 @@ export type RenderParams<
 > = {
   fieldConfig: FieldConfig;
   meta: FieldMetadata | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: AutoFormContextValue<any>;
   field: {
     name: FieldPath<TFieldValues>;
     value: Type;
@@ -54,7 +52,7 @@ export type ControllerParams<
   rules?: object;
   labels: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: AutoFormContextValue<any>;
+  context: () => AutoFormContextValue<any>;
   field: {
     name: FieldPath<TFieldValues>;
     value: Type;
