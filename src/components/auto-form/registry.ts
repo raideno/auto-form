@@ -16,32 +16,16 @@ import type { FieldConfig } from "./context";
 
 export type Values = Record<string, unknown>;
 
-export type ControllerRenderProps<
-  TFieldValues extends FieldValues = FieldValues
+export type RenderParams<
+  TFieldValues extends FieldValues = FieldValues,
+  Type = unknown
 > = {
-  field: {
-    name: FieldPath<TFieldValues>;
-    value: unknown;
-    onChange: (value: unknown) => void;
-    onBlur: () => void;
-  };
-  fieldState: {
-    invalid: boolean;
-    error?: { message?: string };
-  };
-  formState: {
-    isSubmitting: boolean;
-    isLoading: boolean;
-  };
-};
-
-export type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
   fieldConfig: FieldConfig;
   meta: FieldMetadata | undefined;
   field: {
     name: FieldPath<TFieldValues>;
-    value: unknown;
-    onChange: (value: unknown) => void;
+    value: Type;
+    onChange: (value: Type) => void;
     onBlur: () => void;
   };
   fieldState: {
