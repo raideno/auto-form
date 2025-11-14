@@ -204,6 +204,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const baseParams: BaseParams = {
+      form: form as never,
       fieldConfig,
       meta: fieldConfig.meta,
       name: fieldName,
@@ -233,9 +234,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       ui,
     };
 
-    // const defaultControllerNode = getDefaultController(fieldConfig.type)(
-    //   baseParams as ControllerParams
-    // );
     const defaultControllerNode = getDefaultController<FV>(fieldConfig.type)(
       baseParams as ControllerParams<FV>
     );

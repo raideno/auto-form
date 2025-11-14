@@ -17,7 +17,7 @@ import { FilesController } from "./files";
 import type { ControllerParams } from "../auto-form/registry";
 
 type C<TFieldValues extends FieldValues = FieldValues> = (
-  params: ControllerParams<TFieldValues>
+  params: ControllerParams<TFieldValues, any>
 ) => React.ReactNode;
 
 export const DefaultControllers: Record<string, C<any>> = {

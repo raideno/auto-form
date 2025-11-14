@@ -2,7 +2,12 @@
 
 import { z } from "zod/v4";
 import type React from "react";
-import type { Control, FieldPath, FieldValues } from "react-hook-form";
+import type {
+  Control,
+  FieldPath,
+  FieldValues,
+  UseFormReturn,
+} from "react-hook-form";
 // import type { EnumOption } from "./enhanced-zod";
 import type { FieldConfig } from "./context";
 
@@ -56,18 +61,22 @@ export type RenderParams<TFieldValues extends FieldValues = FieldValues> = {
   };
 };
 
-export type ControllerParams<TFieldValues extends FieldValues = FieldValues> = {
+export type ControllerParams<
+  TFieldValues extends FieldValues = FieldValues,
+  Type = unknown
+> = {
   fieldConfig: FieldConfig;
   meta: FieldMetadata | undefined;
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
-  defaultValue?: unknown;
+  defaultValue?: Type;
   rules?: object;
   labels: boolean;
+  form: UseFormReturn;
   field: {
     name: FieldPath<TFieldValues>;
-    value: unknown;
-    onChange: (value: unknown) => void;
+    value: Type;
+    onChange: (value: Type) => void;
     onBlur: () => void;
   };
   fieldState: {

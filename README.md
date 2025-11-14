@@ -17,6 +17,12 @@ A React component library that automatically generates forms from Zod schemas wi
 - Real-time schema editing and form preview
 - TypeScript support
 
+## Installation
+
+```bash
+npm install @raideno/auto-form
+```
+
 ## Usage
 
 ### Basic Example
@@ -24,8 +30,8 @@ A React component library that automatically generates forms from Zod schemas wi
 ```tsx
 import { z } from "zod/v4";
 
-import { AutoForm } from "./components/auto-form";
-import { MetadataRegistry } from "./components/auto-form/registry";
+import { AutoForm } from "@raideno/auto-form/ui";
+import { MetadataRegistry } from "@raideno/auto-form/registry";
 
 const Schema = z.object({
   name: z.string().min(2).max(50),

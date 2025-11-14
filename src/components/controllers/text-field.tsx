@@ -3,7 +3,7 @@ import type { ControllerParams } from "../auto-form/registry";
 import type { FieldValues } from "react-hook-form";
 
 export function TextFieldController<TFieldValues extends FieldValues>(
-  params: ControllerParams<TFieldValues>
+  params: ControllerParams<TFieldValues, string>
 ) {
   const { fieldConfig, field, ui } = params;
   const { type, placeholder, maxLength } = fieldConfig;
