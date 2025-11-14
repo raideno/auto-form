@@ -196,8 +196,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       ) =>
         form.setValue(name, value, options);
 
-    const getContext = () => context;
-
     const fieldState = form.getFieldState(fieldName);
     const currentValue = form.watch(fieldName);
 
@@ -210,7 +208,11 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const baseParams: BaseParams = {
-      context: getContext,
+      form: {
+        setValue: (name, value, options) =>
+          form.setValue(name, value as never, options),
+        getValue: (name) => form.getValues(name),
+      },
       fieldConfig,
       meta: fieldConfig.meta,
       name: fieldName,

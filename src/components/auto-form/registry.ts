@@ -1,10 +1,11 @@
 // registry.tsx
 
-import { z } from "zod/v4";
 import type React from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
+import { z } from "zod/v4";
+
 // import type { EnumOption } from "./enhanced-zod";
-import type { AutoFormContextValue, FieldConfig } from "./context";
+import type { FieldConfig } from "./context";
 
 // NOTE: moved into here in order to keep @ imports in auto.tsx and still be
 // able to import registry at build time as @ imports aren't resolved yet
@@ -52,7 +53,14 @@ export type ControllerParams<
   rules?: object;
   labels: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: () => AutoFormContextValue<any>;
+  form: {
+    setValue: (
+      name: FieldPath<TFieldValues>,
+      value: unknown,
+      options?: Partial<{ shouldValidate: boolean; shouldDirty: boolean }>
+    ) => void;
+    getValue: (name: FieldPath<TFieldValues>) => unknown;
+  };
   field: {
     name: FieldPath<TFieldValues>;
     value: Type;
