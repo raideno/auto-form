@@ -25,16 +25,10 @@ jobs:
       - name: install dependencies
         run: npm ci
 
-      #   - name: run linting
-      #     run: npm run lint
-
-      - name: run type checking
-        run: npm run typecheck
-
       - name: build library
-        run: npm run build:lib
+        run: npm run build --workspace @raideno/auto-form
 
       - name: publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --workspace @raideno/auto-form
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

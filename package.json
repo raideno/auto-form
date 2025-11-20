@@ -1,55 +1,7 @@
 {
-  "name": "@raideno/auto-form",
-  "version": "0.0.27",
+  "name": "auto-form",
+  "version": "0.0.0",
   "description": "Generate forms automatically from Zod schemas with built-in validation and customizable field types",
-  "type": "module",
-  "main": "./dist/lib/ui.cjs",
-  "module": "./dist/lib/ui.js",
-  "types": "./dist/lib/ui.d.ts",
-  "typesVersions": {
-    "*": {
-      "controllers": [
-        "./dist/lib/controllers.d.ts"
-      ],
-      "ui": [
-        "./dist/lib/ui.d.ts"
-      ],
-      "registry": [
-        "./dist/lib/registry.d.ts"
-      ],
-      "zod": [
-        "./dist/lib/zod.d.ts"
-      ]
-    }
-  },
-  "exports": {
-    "./controllers": {
-      "types": "./dist/lib/controllers.d.ts",
-      "import": "./dist/lib/controllers.js",
-      "require": "./dist/lib/controllers.cjs"
-    },
-    "./ui": {
-      "types": "./dist/lib/ui.d.ts",
-      "import": "./dist/lib/ui.js",
-      "require": "./dist/lib/ui.cjs"
-    },
-    "./registry": {
-      "types": "./dist/lib/registry.d.ts",
-      "import": "./dist/lib/registry.js",
-      "require": "./dist/lib/registry.cjs"
-    },
-    "./zod": {
-      "types": "./dist/lib/zod.d.ts",
-      "import": "./dist/lib/zod.js",
-      "require": "./dist/lib/zod.cjs"
-    },
-    "./styles.css": "./dist/lib/auto-form.css"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE.md"
-  ],
   "keywords": [
     "react",
     "form",
@@ -69,49 +21,10 @@
     "url": "https://github.com/raideno/auto-form/issues"
   },
   "homepage": "https://github.com/raideno/auto-form#readme",
-  "scripts": {
-    "dev:lib": "vite --config vite.lib.config.ts",
-    "dev:demo": "vite --config vite.demo.config.ts",
-    "build:lib": "vite build --config vite.lib.config.ts",
-    "build:demo": "vite build --config vite.demo.config.ts",
-    "lint": "eslint .",
-    "preview": "vite preview --config vite.demo.config.ts",
-    "typecheck": "tsc --noEmit",
-    "test:exports": "node test-exports.mjs"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@monaco-editor/react": "^4.7.0",
-    "@radix-ui/react-icons": "^1.3.2",
-    "@tailwindcss/vite": "^4.1.12",
-    "@tanstack/react-query": "^5.85.5",
-    "@types/node": "^24.3.0",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "@vitejs/plugin-react": "^5.0.0",
-    "eslint": "^9.33.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.3.0",
-    "lucide-react": "^0.540.0",
-    "rollup-plugin-visualizer": "^6.0.3",
-    "tailwindcss": "^4.1.12",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2",
-    "vite-plugin-dts": "^4.5.4"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1"
-  },
-  "peerDependencies": {
-    "@hookform/resolvers": "^5.2.1",
-    "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/themes": "^3.2.1",
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0",
-    "react-error-boundary": "^6.0.0",
-    "react-hook-form": "^7.62.0",
-    "zod": "^4.0.17"
-  }
+  "workspaces": [
+    "./packages/demo",
+    "./packages/docs",
+    "./packages/libs/main",
+    "./packages/libs/controllers"
+  ]
 }

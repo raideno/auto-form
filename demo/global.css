@@ -1,7 +1,0 @@
-@import "tailwindcss";
-
-@source "../src";
-
-.radix-themes {
-  --cursor-button: pointer !important;
-}

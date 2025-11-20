@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: build
-        run: npm run build:demo
+        run: npm run build --workspace demo
 
       - name: setup pages
         uses: actions/configure-pages@v4
@@ -40,7 +40,7 @@ jobs:
       - name: upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./dist/demo"
+          path: "./packages/demo/dist/demo"
 
   deploy:
     runs-on: ubuntu-latest
