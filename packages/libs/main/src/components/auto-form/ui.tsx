@@ -149,17 +149,25 @@ interface ContentProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
     renderDefault: () => React.ReactNode;
     form: AutoFormContextValue<TSchemaType>["form"];
   }) => React.ReactNode;
-  fields?: Array<Path<z.infer<TSchemaType>>>;
+  show?: Array<Path<z.infer<TSchemaType>>>;
+  hide?: Array<Path<z.infer<TSchemaType>>>;
 }
 
 function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   className = "",
   renderField,
-  fields: selectedFieldKeys,
+  show,
+  hide,
 }: ContentProps_<TSchemaType>) {
   const context = useAutoForm<TSchemaType>();
 
   const { form, fields: allFields, labels } = context;
+
+  if (show && hide) {
+    throw new Error(
+      "AutoForm.Content Error: Only one of 'show' or 'hide' can be specified, not both."
+    );
+  }
 
   const values = form.watch();
 
@@ -248,9 +256,9 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   };
 
   const fieldsToRender: Array<FieldConfig> =
-    selectedFieldKeys && selectedFieldKeys.length > 0
-      ? (selectedFieldKeys
-          .map((k) => {
+    show && show.length > 0
+      ? (show
+          .map((k: Path<z.infer<TSchemaType>>) => {
             const found = allFields.find((f) => f.key === (k as string));
             if (!found) {
               console.warn(
@@ -262,6 +270,10 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             return found;
           })
           .filter(Boolean) as Array<FieldConfig>)
+      : hide && hide.length > 0
+      ? allFields.filter(
+          (f) => !hide.includes(f.key as Path<z.infer<TSchemaType>>)
+        )
       : allFields;
 
   const fieldGroups = groupFields(fieldsToRender);
