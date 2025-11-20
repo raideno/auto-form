@@ -9,6 +9,7 @@ export type {
   AutoFormContextValue,
   FieldConfig,
   FieldGroup,
+  FormHelpers,
 } from "@/components/auto-form/context";
 
 export * from "@/components/ui/file-upload";

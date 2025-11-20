@@ -20,7 +20,7 @@ export function PriceController(params: ControllerParams) {
     <TextField.Root
       size="3"
       type="number"
-      className="!text-right group"
+      className="text-right! pr-1 group"
       placeholder={placeholder}
       value={displayValue}
       onChange={(e) => {
@@ -31,10 +31,10 @@ export function PriceController(params: ControllerParams) {
       disabled={ui.disabled}
       readOnly={ui.readOnly}
     >
-      <TextField.Slot side="left" className="!p-0">
+      <TextField.Slot side="left" className="p-0!">
         <Box
           className={cn(
-            "p-3 !flex items-center justify-center h-full",
+            "p-3 flex! items-center justify-center h-full",
             "[box-shadow:inset_-1px_0_0_var(--gray-a7)]",
             "group-focus-within:[box-shadow:inset_-2px_0_0_var(--text-field-focus-color)]"
           )}
@@ -42,10 +42,10 @@ export function PriceController(params: ControllerParams) {
           <Text color="gray">USD</Text>
         </Box>
       </TextField.Slot>
-      <TextField.Slot side="right" className="!p-0">
+      <TextField.Slot side="right" className="p-0!">
         <Box
           className={cn(
-            "p-3 !flex items-center justify-center h-full",
+            "p-3 flex! items-center justify-center h-full",
             "[box-shadow:inset_1px_0_0_var(--gray-a7)]",
             "group-focus-within:[box-shadow:inset_2px_0_0_var(--text-field-focus-color)]"
           )}

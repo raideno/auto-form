@@ -26,7 +26,22 @@ export const App = () => {
             </Heading>
             <AutoForm.Root
               onError={() => console.log("[error]:")}
-              onSubmit={(data) => console.log("[submit]:", data)}
+              onSubmit={(data, tag, helpers) => {
+                console.log("[submit]:", { data, tag });
+
+                if (tag === "save") {
+                  console.log("Saving data...");
+                  // Handle save action
+                } else if (tag === "draft") {
+                  console.log("Saving as draft...");
+                  // Handle draft action
+                } else if (tag === "cancel") {
+                  console.log("Cancelling...");
+                  helpers.reset();
+                } else {
+                  console.log("Default submit");
+                }
+              }}
               schema={INITIAL_SCHEMA_CODE}
             >
               <AutoForm.Content />
@@ -34,16 +49,19 @@ export const App = () => {
                 <AutoForm.Action
                   className="!w-full"
                   variant="soft"
-                  type="reset"
+                  tag="cancel"
                 >
                   Cancel
+                </AutoForm.Action>
+                <AutoForm.Action className="!w-full" variant="soft" tag="draft">
+                  Save as Draft
                 </AutoForm.Action>
                 <AutoForm.Action
                   className="!w-full"
                   variant="classic"
-                  type="submit"
+                  tag="save"
                 >
-                  Create
+                  Save
                 </AutoForm.Action>
               </AutoForm.Actions>
             </AutoForm.Root>

@@ -1,3 +1,40 @@
+/**
+ * AutoForm - Automatic form generation from Zod schemas
+ *
+ * @example
+ * ```tsx
+ * <AutoForm.Root
+ *   schema={mySchema}
+ *   defaultValues={initialData}
+ *   onSubmit={(data, tag, helpers) => {
+ *     // Handle different action button tags
+ *     if (tag === "save") {
+ *       await saveData(data);
+ *     } else if (tag === "draft") {
+ *       await saveDraft(data);
+ *     } else if (tag === "cancel") {
+ *       helpers.reset(); // Reset to default values
+ *     } else if (tag === "clear") {
+ *       helpers.clear(); // Clear all fields
+ *     }
+ *     // Default submit (no tag)
+ *   }}
+ * >
+ *   <AutoForm.Content />
+ *   <AutoForm.Actions>
+ *     <AutoForm.Action tag="cancel" variant="soft">Cancel</AutoForm.Action>
+ *     <AutoForm.Action tag="draft" variant="soft">Save Draft</AutoForm.Action>
+ *     <AutoForm.Action tag="save" variant="classic">Save</AutoForm.Action>
+ *   </AutoForm.Actions>
+ * </AutoForm.Root>
+ * ```
+ *
+ * Helper functions available in onSubmit:
+ * - `helpers.reset()` - Reset form to default values
+ * - `helpers.clear()` - Clear all form fields
+ * - `helpers.setValue(name, value)` - Set a specific field value
+ * - `helpers.setError(field, message)` - Set a field error
+ */
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
@@ -8,7 +45,7 @@ import type React from "react";
 import type * as z from "zod/v4";
 import type { Path, PathValue, SubmitErrorHandler } from "react-hook-form";
 import type { ButtonProps } from "@radix-ui/themes";
-import type { AutoFormContextValue, FieldConfig } from "./context";
+import type { AutoFormContextValue, FieldConfig, FormHelpers } from "./context";
 
 import { AutoFormContext, useAutoForm } from "./context";
 import {
@@ -33,8 +70,11 @@ import type { ControllerParams } from "./registry";
 interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchemaType;
   defaultValues?: z.output<TSchemaType>;
-  onSubmit?: (values: z.infer<TSchemaType>) => Promise<void> | void;
-  onCancel?: () => void;
+  onSubmit?: (
+    data: z.infer<TSchemaType>,
+    tag: string | undefined,
+    helpers: FormHelpers<TSchemaType>
+  ) => Promise<void> | void;
   onError?: () => void;
   onChange?: (values: z.infer<TSchemaType>) => void;
   className?: string;
@@ -46,14 +86,13 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   schema,
   defaultValues,
   onSubmit,
-  onCancel,
   onError,
   onChange,
   className = "",
   children,
   labels = true,
 }: RootProps_<TSchemaType>) {
-  const [isCancelLoading, setIsCancelLoading] = useState<boolean>(false);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   if (!zodTypeGuards.object(schema))
     throw new Error(
@@ -76,37 +115,47 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     }
   }, [form, onChange]);
 
-  function withLoading<TArgs extends unknown[]>(
-    fn: (...args: TArgs) => Promise<void> | void,
-    setLoading: (loading: boolean) => void,
-    isBlocked: () => boolean
-  ) {
-    return async (...args: TArgs) => {
-      if (isBlocked()) return;
-      try {
-        setLoading(true);
-        await fn(...args);
-      } catch (error) {
-        console.error("[form-error]:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  }
+  const createHelpers = (): FormHelpers<TSchemaType> => ({
+    reset: () => form.reset(defaultValues),
+    clear: () => {
+      const emptyValues = Object.keys(schema.shape).reduce((acc, key) => {
+        acc[key as keyof FormValues] = undefined as any;
+        return acc;
+      }, {} as FormValues);
+      form.reset(emptyValues);
+    },
+    setValue: (name, value) => {
+      form.setValue(
+        name as unknown as Path<FormValues>,
+        value as PathValue<FormValues, Path<FormValues>>,
+        { shouldValidate: true }
+      );
+    },
+    setError: (field, message) => {
+      form.setError(field as unknown as Path<FormValues>, { message });
+    },
+  });
 
-  const handleSubmitWrapper = (values: FormValues) => onSubmit?.(values);
+  const handleActionSubmitWrapper = async (
+    tag: string | undefined,
+    values: FormValues
+  ) => {
+    if (isActionLoading) return;
+    try {
+      setIsActionLoading(true);
+      await onSubmit?.(values, tag, createHelpers());
+    } catch (error) {
+      console.error("[form-error]:", error);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const handleErrorWrapper: SubmitErrorHandler<FormValues> = (errors) => {
     console.error("[form-errors]:", errors);
-    if (form.formState.isSubmitting || isCancelLoading) return;
+    if (form.formState.isSubmitting || isActionLoading) return;
     onError?.();
   };
-
-  const handleCancelWrapper = withLoading(
-    () => (onCancel ? onCancel() : form.reset(defaultValues)),
-    setIsCancelLoading,
-    () => form.formState.isSubmitting || isCancelLoading
-  );
 
   const fields: Array<FieldConfig> = Object.entries(schema.shape).map(
     ([key, zodType]) => getFieldType(key, zodType)
@@ -120,19 +169,22 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         {
           form,
           schema,
-          isCancelLoading,
-          handleSubmit: handleSubmitWrapper,
-          handleCancel: handleCancelWrapper,
+          isActionLoading,
+          handleActionSubmit: handleActionSubmitWrapper,
           fields,
           fieldGroups,
           labels,
+          defaultValues,
         } as AutoFormContextValue<TSchemaType>
       }
     >
       <Form {...form}>
         <form
           className={className}
-          onSubmit={form.handleSubmit(handleSubmitWrapper, handleErrorWrapper)}
+          onSubmit={form.handleSubmit(
+            (values) => handleActionSubmitWrapper(undefined, values),
+            handleErrorWrapper
+          )}
           noValidate
         >
           {children}
@@ -406,7 +458,8 @@ function Actions_({ className, children }: ActionsProps_) {
 
 interface ActionProps_
   extends Omit<ButtonProps, "type" | "onClick" | "disabled"> {
-  type?: "submit" | "button" | "reset";
+  type?: "submit" | "button";
+  tag?: string;
   className?: string;
   children: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -414,35 +467,44 @@ interface ActionProps_
 
 function Action_({
   type = "button",
+  tag,
   className,
   children,
   onClick,
   ...props
 }: ActionProps_) {
-  const { handleCancel, isCancelLoading, form } =
+  const { handleActionSubmit, isActionLoading, form, defaultValues } =
     useAutoForm<z.ZodObject<z.ZodRawShape>>();
 
   const isLoading =
-    (type === "submit" && form.formState.isSubmitting) ||
-    (type === "reset" && isCancelLoading);
-  const isDisabled = form.formState.isSubmitting || isCancelLoading;
+    (type === "submit" && form.formState.isSubmitting) || isActionLoading;
+  const isDisabled = form.formState.isSubmitting || isActionLoading;
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     if (isDisabled) {
       event.preventDefault();
       return;
     }
-    if (type === "reset") {
-      event.preventDefault();
-      handleCancel();
-    } else if (type === "button" && onClick) {
+
+    if (type === "button" && onClick) {
       onClick(event);
+      return;
+    }
+
+    if (type === "submit" || tag) {
+      event.preventDefault();
+      const values = form.getValues();
+      const isValid = await form.trigger();
+
+      if (isValid) {
+        await handleActionSubmit(tag, values);
+      }
     }
   };
 
   return (
     <Button
-      type={type}
+      type={type === "submit" ? "submit" : "button"}
       className={cn(className)}
       onClick={handleClick}
       disabled={isDisabled}

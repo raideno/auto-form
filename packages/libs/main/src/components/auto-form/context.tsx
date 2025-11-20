@@ -8,18 +8,30 @@ import type { UseFormReturn } from "react-hook-form";
 import type { FieldMetadata } from "./registry";
 import type { EnumOption } from "./enhanced-zod";
 
+export interface FormHelpers<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
+  reset: () => void;
+  clear: () => void;
+  setValue: <TPath extends keyof z.output<TSchemaType>>(
+    name: TPath,
+    value: z.output<TSchemaType>[TPath]
+  ) => void;
+  setError: (field: keyof z.output<TSchemaType>, message: string) => void;
+}
+
 export interface AutoFormContextValue<
   TSchemaType extends z.ZodObject<z.ZodRawShape>
 > {
   form: UseFormReturn<z.output<TSchemaType>>;
   schema: TSchemaType;
-  isSubmitLoading: boolean;
-  isCancelLoading: boolean;
-  handleSubmit: (values: z.infer<TSchemaType>) => unknown;
-  handleCancel: () => unknown;
+  isActionLoading: boolean;
+  handleActionSubmit: (
+    tag: string | undefined,
+    values: z.infer<TSchemaType>
+  ) => unknown;
   fields: Array<FieldConfig>;
   fieldGroups: Array<FieldGroup>;
   labels: boolean;
+  defaultValues?: z.output<TSchemaType>;
 }
 
 export interface FieldConfig {
