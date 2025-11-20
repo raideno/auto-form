@@ -34,9 +34,11 @@ export default defineConfig({
         registry: path.resolve(__dirname, "src/lib/registry.ts"),
         zod: path.resolve(__dirname, "src/lib/zod.ts"),
         controllers: path.resolve(__dirname, "src/lib/controllers.ts"),
+        styles: path.resolve(__dirname, "src/lib/styles.css"),
       },
       formats: ["es", "cjs"],
     },
+    cssCodeSplit: true,
     outDir: "dist/lib",
     rollupOptions: {
       external: [
@@ -63,7 +65,6 @@ export default defineConfig({
     },
     sourcemap: false,
     emptyOutDir: true,
-    cssCodeSplit: false,
   },
   resolve: {
     alias: {

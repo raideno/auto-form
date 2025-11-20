@@ -2,6 +2,7 @@
 import "@/global.css";
 // @ts-ignore
 import "@radix-ui/themes/styles.css";
+
 // @ts-ignore
 import "@raideno/auto-form/styles.css";
 
