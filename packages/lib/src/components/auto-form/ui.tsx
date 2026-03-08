@@ -49,6 +49,7 @@ import type { AutoFormContextValue, FieldConfig, FormHelpers } from "./context";
 
 import { AutoFormContext, useAutoForm } from "./context";
 import {
+  extractZodDefaults,
   getFieldType,
   groupFields,
   renderRichText,
@@ -101,9 +102,14 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   type FormValues = z.output<TSchemaType>;
 
+  const resolvedDefaultValues = {
+    ...extractZodDefaults(schema),
+    ...defaultValues,
+  } as FormValues;
+
   const form = useForm<FormValues>({
     resolver: standardSchemaResolver(schema),
-    defaultValues: defaultValues && (async () => await defaultValues),
+    defaultValues: async () => resolvedDefaultValues,
   });
 
   useEffect(() => {
@@ -116,7 +122,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   }, [form, onChange]);
 
   const createHelpers = (): FormHelpers<TSchemaType> => ({
-    reset: () => form.reset(defaultValues),
+    reset: () => form.reset(resolvedDefaultValues),
     clear: () => {
       const emptyValues = Object.keys(schema.shape).reduce((acc, key) => {
         acc[key as keyof FormValues] = undefined as any;
@@ -174,7 +180,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           fields,
           fieldGroups,
           labels,
-          defaultValues,
+          defaultValues: resolvedDefaultValues,
         } as AutoFormContextValue<TSchemaType>
       }
     >

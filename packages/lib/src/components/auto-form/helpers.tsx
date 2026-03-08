@@ -2,11 +2,63 @@
 
 import z from "zod/v4";
 
+import type { ZodObject, ZodRawShape } from "zod/v4";
+
 import { MetadataRegistry } from "./registry";
 import { getEnhancedOptions } from "./enhanced-zod";
 
 import type { FieldMetadata } from "./registry";
 import type { FieldConfig, FieldGroup } from "./context";
+
+/**
+ * Recursively walks a ZodObject schema and extracts any `.default()` values
+ * declared on the fields. Handles optional/nullable wrappers at any depth.
+ */
+export function extractZodDefaults(
+  schema: ZodObject<ZodRawShape>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, field] of Object.entries(schema.shape)) {
+    const defaultValue = findZodDefault(field as z.ZodTypeAny);
+    if (defaultValue !== undefined) {
+      result[key] = defaultValue;
+    }
+  }
+
+  return result;
+}
+
+function findZodDefault(field: z.ZodTypeAny): unknown {
+  const { type } = field.def;
+
+  if (type === "default") {
+    const { defaultValue } = field.def as unknown as { defaultValue: unknown | (() => unknown) };
+    return typeof defaultValue === "function" ? defaultValue() : defaultValue;
+  }
+
+  if (type === "optional" || type === "nullable") {
+    const inner = (field.def as unknown as { innerType: z.ZodTypeAny }).innerType;
+    const innerDefault = findZodDefault(inner);
+    if (innerDefault !== undefined) return innerDefault;
+
+    // Even without a default, recurse into nested objects
+    const unwrapped = unwrapZodType(inner);
+    if (zodTypeGuards.object(unwrapped)) {
+      const nested = extractZodDefaults(unwrapped);
+      return Object.keys(nested).length > 0 ? nested : undefined;
+    }
+
+    return undefined;
+  }
+
+  if (type === "object") {
+    const nested = extractZodDefaults(field as unknown as ZodObject<ZodRawShape>);
+    return Object.keys(nested).length > 0 ? nested : undefined;
+  }
+
+  return undefined;
+}
 
 export function startCase(str: string): string {
   return (
@@ -178,8 +230,12 @@ export const getNumericConstraint = (
 
 export const unwrapZodType = (zodType: z.ZodTypeAny): z.ZodTypeAny => {
   let baseType = zodType;
-  while (zodTypeGuards.optional(baseType) || zodTypeGuards.nullable(baseType)) {
-    baseType = baseType.def.innerType;
+  while (
+    zodTypeGuards.optional(baseType) ||
+    zodTypeGuards.nullable(baseType) ||
+    baseType.def.type === "default"
+  ) {
+    baseType = (baseType.def as unknown as { innerType: z.ZodTypeAny }).innerType;
   }
   return baseType;
 };

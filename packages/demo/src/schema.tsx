@@ -3,7 +3,7 @@ import { z_ } from "@raideno/auto-form/zod";
 import { MetadataRegistry } from "@raideno/auto-form/registry";
 
 export const INITIAL_SCHEMA_CODE = z_.object({
-  name: z_.string().max(32).min(2),
+  name: z_.string().max(32).min(2).default("John"),
   avatar: z_.file().register(MetadataRegistry, {
     description: "Upload your **__avatar__**.",
   }),
