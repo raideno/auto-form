@@ -24,18 +24,18 @@ export const App = () => {
             </Heading>
             <AutoForm.Root
               onError={() => console.log("[error]:")}
-              onSubmit={(data, tag, helpers) => {
-                console.log("[submit]:", { data, tag });
+              onSubmit={(data, tag, validated, helpers) => {
+                console.log("[submit]:", { data, tag, validated });
 
-                if (tag === "save") {
-                  console.log("Saving data...");
-                  // Handle save action
+                if (tag === "cancel") {
+                  console.log("Cancelling...");
+                  helpers.reset();
                 } else if (tag === "draft") {
                   console.log("Saving as draft...");
                   // Handle draft action
-                } else if (tag === "cancel") {
-                  console.log("Cancelling...");
-                  helpers.reset();
+                } else if (tag === "save") {
+                  console.log("Saving data...");
+                  // Handle save action
                 } else {
                   console.log("Default submit");
                 }
@@ -48,6 +48,7 @@ export const App = () => {
                   className="!w-full"
                   variant="soft"
                   tag="cancel"
+                  noValidate
                 >
                   Cancel
                 </AutoForm.Action>

@@ -26,7 +26,8 @@ export interface AutoFormContextValue<
   isActionLoading: boolean;
   handleActionSubmit: (
     tag: string | undefined,
-    values: z.infer<TSchemaType>
+    values: z.infer<TSchemaType>,
+    validated?: boolean,
   ) => unknown;
   fields: Array<FieldConfig>;
   fieldGroups: Array<FieldGroup>;

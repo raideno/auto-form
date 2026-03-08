@@ -6,7 +6,7 @@
  * <AutoForm.Root
  *   schema={mySchema}
  *   defaultValues={initialData}
- *   onSubmit={(data, tag, helpers) => {
+ *   onSubmit={(data, tag, validated, helpers) => {
  *     // Handle different action button tags
  *     if (tag === "save") {
  *       await saveData(data);
@@ -18,11 +18,12 @@
  *       helpers.clear(); // Clear all fields
  *     }
  *     // Default submit (no tag)
+ *     // `validated` is false when the action has noValidate=true
  *   }}
  * >
  *   <AutoForm.Content />
  *   <AutoForm.Actions>
- *     <AutoForm.Action tag="cancel" variant="soft">Cancel</AutoForm.Action>
+ *     <AutoForm.Action tag="cancel" variant="soft" noValidate>Cancel</AutoForm.Action>
  *     <AutoForm.Action tag="draft" variant="soft">Save Draft</AutoForm.Action>
  *     <AutoForm.Action tag="save" variant="classic">Save</AutoForm.Action>
  *   </AutoForm.Actions>
@@ -74,6 +75,7 @@ interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   onSubmit?: (
     data: z.infer<TSchemaType>,
     tag: string | undefined,
+    validated: boolean,
     helpers: FormHelpers<TSchemaType>,
   ) => Promise<void> | void;
   onError?: () => void;
@@ -145,11 +147,12 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   const handleActionSubmitWrapper = async (
     tag: string | undefined,
     values: FormValues,
+    validated: boolean = true,
   ) => {
     if (isActionLoading) return;
     try {
       setIsActionLoading(true);
-      await onSubmit?.(values, tag, createHelpers());
+      await onSubmit?.(values, tag, validated, createHelpers());
     } catch (error) {
       console.error("[form-error]:", error);
     } finally {
@@ -176,7 +179,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           form,
           schema,
           isActionLoading,
-          handleActionSubmit: handleActionSubmitWrapper,
+          handleActionSubmit: handleActionSubmitWrapper as AutoFormContextValue<TSchemaType>["handleActionSubmit"],
           fields,
           fieldGroups,
           labels,
@@ -513,6 +516,8 @@ interface ActionProps_ extends Omit<
 > {
   type?: "submit" | "button";
   tag?: string;
+  /** When true, the action bypasses form validation and calls onSubmit with validated=false */
+  noValidate?: boolean;
   className?: string;
   children: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -521,6 +526,7 @@ interface ActionProps_ extends Omit<
 function Action_({
   type = "button",
   tag,
+  noValidate = false,
   className,
   children,
   onClick,
@@ -547,10 +553,14 @@ function Action_({
     if (type === "submit" || tag) {
       event.preventDefault();
       const values = form.getValues();
-      const isValid = await form.trigger();
 
-      if (isValid) {
-        await handleActionSubmit(tag, values);
+      if (noValidate) {
+        await handleActionSubmit(tag, values, false);
+      } else {
+        const isValid = await form.trigger();
+        if (isValid) {
+          await handleActionSubmit(tag, values, true);
+        }
       }
     }
   };
