@@ -14,9 +14,6 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      external: ["@raideno/auto-form/styles.css"],
-    },
     outDir: "dist/demo",
   },
 });

@@ -31,6 +31,9 @@ jobs:
       - name: install dependencies
         run: npm ci
 
+      - name: build library
+        run: npm run build --workspace @raideno/auto-form
+
       - name: build
         run: npm run build --workspace demo
 
