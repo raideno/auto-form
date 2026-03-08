@@ -2,8 +2,9 @@ import { Box, Text, TextField } from "@radix-ui/themes";
 
 import type { ControllerParams } from "@/components/auto-form/registry";
 import { cn } from "@/lib/utils";
+import type { FieldValues } from "react-hook-form";
 
-export function PriceController(params: ControllerParams) {
+export function PriceController<TFieldValues extends FieldValues = FieldValues>(params: ControllerParams<TFieldValues>) {
   const { fieldConfig, field, ui } = params;
   const { placeholder } = fieldConfig;
 

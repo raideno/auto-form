@@ -314,8 +314,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                   )}
                   <FormControl>
                     {meta?.controller
-                      ? meta.controller(params)
-                      : defaultController}
+                      ? meta.controller(params) as React.ReactNode
+                      : defaultController as React.ReactNode}
                   </FormControl>
                 </div>
               ) : (
@@ -335,8 +335,8 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
                   >
                     <FormControl>
                       {meta?.controller
-                        ? meta.controller(params)
-                        : defaultController}
+                        ? meta.controller(params) as React.ReactNode
+                        : defaultController as React.ReactNode}
                     </FormControl>
                   </ErrorBoundary>
                   {meta?.description && (
@@ -367,13 +367,13 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
         fieldState: params.fieldState,
         formState: params.formState,
         labels,
-        controller: controllerComponent,
+        controller: controllerComponent as React.ReactNode,
         defaultRender,
         ui: params.ui,
       });
     }
 
-    return defaultRender();
+    return defaultRender() as React.ReactNode;
   };
 
   createControllerParams = (
@@ -403,9 +403,6 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       context,
       fieldConfig,
       meta: fieldConfig.meta,
-      name: fieldName,
-      control: form.control,
-      defaultValue: form.getValues(fieldName),
       labels,
       field: {
         name: fieldName,
@@ -431,13 +428,13 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const defaultControllerNode = getDefaultController<FV>(fieldConfig.type)(
-      { ...baseParams, renderFields, defaultController: null as unknown as React.ReactNode } as ControllerParams<FV>,
+      { ...baseParams, renderFields: renderFields as ControllerParams<FV>["renderFields"], defaultController: null } as ControllerParams<FV>,
     );
 
     return {
       ...(baseParams as ControllerParams<FV>),
       defaultController: defaultControllerNode,
-      renderFields,
+      renderFields: renderFields as ControllerParams<FV>["renderFields"],
     };
   };
 
