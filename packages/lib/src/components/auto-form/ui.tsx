@@ -73,7 +73,7 @@ interface RootProps_<TSchemaType extends z.ZodObject<z.ZodRawShape>> {
   onSubmit?: (
     data: z.infer<TSchemaType>,
     tag: string | undefined,
-    helpers: FormHelpers<TSchemaType>
+    helpers: FormHelpers<TSchemaType>,
   ) => Promise<void> | void;
   onError?: () => void;
   onChange?: (values: z.infer<TSchemaType>) => void;
@@ -96,7 +96,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   if (!zodTypeGuards.object(schema))
     throw new Error(
-      "AutoForm Error: The provided schema must be an instance of z.ZodObject."
+      "AutoForm Error: The provided schema must be an instance of z.ZodObject.",
     );
 
   type FormValues = z.output<TSchemaType>;
@@ -128,7 +128,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
       form.setValue(
         name as unknown as Path<FormValues>,
         value as PathValue<FormValues, Path<FormValues>>,
-        { shouldValidate: true }
+        { shouldValidate: true },
       );
     },
     setError: (field, message) => {
@@ -138,7 +138,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   const handleActionSubmitWrapper = async (
     tag: string | undefined,
-    values: FormValues
+    values: FormValues,
   ) => {
     if (isActionLoading) return;
     try {
@@ -158,7 +158,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
   };
 
   const fields: Array<FieldConfig> = Object.entries(schema.shape).map(
-    ([key, zodType]) => getFieldType(key, zodType)
+    ([key, zodType]) => getFieldType(key, zodType),
   );
 
   const fieldGroups = groupFields(fields);
@@ -183,7 +183,7 @@ function Root_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           className={className}
           onSubmit={form.handleSubmit(
             (values) => handleActionSubmitWrapper(undefined, values),
-            handleErrorWrapper
+            handleErrorWrapper,
           )}
           noValidate
         >
@@ -217,7 +217,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   if (show && hide) {
     throw new Error(
-      "AutoForm.Content Error: Only one of 'show' or 'hide' can be specified, not both."
+      "AutoForm.Content Error: Only one of 'show' or 'hide' can be specified, not both.",
     );
   }
 
@@ -225,7 +225,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   const evaluateConditional = <T,>(
     value: T | ((values: z.output<TSchemaType>) => T) | undefined,
-    defaultValue: T
+    defaultValue: T,
   ): T => {
     if (value === undefined) return defaultValue;
     if (typeof value === "function") {
@@ -241,17 +241,150 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
 
   // Bind controller/render params to the current form value type
   type FV = z.output<TSchemaType>;
-  type BaseParams = Omit<ControllerParams<FV>, "defaultController">;
+  type BaseParams = Omit<ControllerParams<FV>, "defaultController" | "renderFields">;
 
-  const createControllerParams = (
+  // Forward declaration — populated below after renderFields is defined.
+  // eslint-disable-next-line prefer-const
+  let createControllerParams: (
     fieldConfig: FieldConfig,
-    fieldName: Path<z.infer<TSchemaType>>
+    fieldName: Path<z.infer<TSchemaType>>,
+  ) => ControllerParams<FV>;
+
+  const renderFields = (fields: FieldConfig[]): React.ReactNode => {
+    const groups = groupFields(fields);
+    return (
+      <>
+        {groups.map((group, groupIndex) => (
+          <div
+            key={`group-${groupIndex}`}
+            className={cn(
+              "w-full grid gap-4",
+              group.length > 1 ? "grid-cols-2" : "grid-cols-1",
+            )}
+          >
+            {group.map((fieldConfig) => {
+              const { key, meta } = fieldConfig;
+              const fieldName = key as Path<z.infer<TSchemaType>>;
+
+              const isHidden = evaluateConditional(meta?.hidden, false);
+              if (isHidden) return null;
+
+              return renderFieldConfig(fieldConfig, fieldName);
+            })}
+          </div>
+        ))}
+      </>
+    );
+  };
+
+  const renderFieldConfig = (
+    fieldConfig: FieldConfig,
+    fieldName: Path<z.infer<TSchemaType>>,
+  ): React.ReactNode => {
+    const { key, meta } = fieldConfig;
+
+    const defaultRender = () => {
+      const params = createControllerParams(fieldConfig, fieldName);
+      const defaultController = params.defaultController;
+
+      if (fieldConfig.type === "object") {
+        return meta?.controller ? meta.controller(params) : defaultController;
+      }
+
+      return (
+        <FormField
+          key={key}
+          control={form.control}
+          name={fieldName}
+          render={() => (
+            <FormItem className="w-full !flex flex-col">
+              {fieldConfig.type === "switch" ? (
+                <div className="flex flex-row items-center justify-between space-x-3 py-4">
+                  {labels && (
+                    <Flex direction={"column"} gap={"1"}>
+                      <FormLabel htmlFor={key}>
+                        {fieldConfig.label}
+                      </FormLabel>
+                      {meta?.description && (
+                        <Text size="2" color="gray">
+                          {renderRichText(meta.description)}
+                        </Text>
+                      )}
+                    </Flex>
+                  )}
+                  <FormControl>
+                    {meta?.controller
+                      ? meta.controller(params)
+                      : defaultController}
+                  </FormControl>
+                </div>
+              ) : (
+                <>
+                  {labels && (
+                    <FormLabel htmlFor={key}>
+                      {fieldConfig.label}
+                    </FormLabel>
+                  )}
+                  <ErrorBoundary
+                    FallbackComponent={(props) => {
+                      console.error("[field-error]:", props.error);
+                      return (
+                        <div>Failed to load field controller.</div>
+                      );
+                    }}
+                  >
+                    <FormControl>
+                      {meta?.controller
+                        ? meta.controller(params)
+                        : defaultController}
+                    </FormControl>
+                  </ErrorBoundary>
+                  {meta?.description && (
+                    <Text size="2" color="gray">
+                      {renderRichText(meta.description)}
+                    </Text>
+                  )}
+                </>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    };
+
+    if (meta?.renderer) {
+      const params = createControllerParams(fieldConfig, fieldName);
+      const controllerComponent = meta?.controller
+        ? meta.controller<FV>(params)
+        : params.defaultController;
+
+      return meta.renderer({
+        context,
+        fieldConfig,
+        meta,
+        field: params.field,
+        fieldState: params.fieldState,
+        formState: params.formState,
+        labels,
+        controller: controllerComponent,
+        defaultRender,
+        ui: params.ui,
+      });
+    }
+
+    return defaultRender();
+  };
+
+  createControllerParams = (
+    fieldConfig: FieldConfig,
+    fieldName: Path<z.infer<TSchemaType>>,
   ): ControllerParams<FV> => {
     const set =
       <N extends Path<z.output<TSchemaType>>>(name: N) =>
       (
         value: PathValue<z.output<TSchemaType>, N>,
-        options = { shouldValidate: true as const }
+        options = { shouldValidate: true as const },
       ) =>
         form.setValue(name, value, options);
 
@@ -282,7 +415,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             value as PathValue<
               z.output<TSchemaType>,
               Path<z.output<TSchemaType>>
-            >
+            >,
           ),
         onBlur: () => form.trigger(fieldName),
       },
@@ -298,12 +431,13 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
     };
 
     const defaultControllerNode = getDefaultController<FV>(fieldConfig.type)(
-      baseParams as ControllerParams<FV>
+      { ...baseParams, renderFields, defaultController: null as unknown as React.ReactNode } as ControllerParams<FV>,
     );
 
     return {
       ...(baseParams as ControllerParams<FV>),
       defaultController: defaultControllerNode,
+      renderFields,
     };
   };
 
@@ -315,18 +449,18 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             if (!found) {
               console.warn(
                 `[AutoForm.Content] Field key "${String(
-                  k
-                )}" not found in schema.`
+                  k,
+                )}" not found in schema.`,
               );
             }
             return found;
           })
           .filter(Boolean) as Array<FieldConfig>)
       : hide && hide.length > 0
-      ? allFields.filter(
-          (f) => !hide.includes(f.key as Path<z.infer<TSchemaType>>)
-        )
-      : allFields;
+        ? allFields.filter(
+            (f) => !hide.includes(f.key as Path<z.infer<TSchemaType>>),
+          )
+        : allFields;
 
   const fieldGroups = groupFields(fieldsToRender);
 
@@ -337,7 +471,7 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
           key={`group-${groupIndex}`}
           className={cn(
             "w-full grid gap-4",
-            group.length > 1 ? "grid-cols-2" : "grid-cols-1"
+            group.length > 1 ? "grid-cols-2" : "grid-cols-1",
           )}
         >
           {group.map((fieldConfig) => {
@@ -347,99 +481,13 @@ function Content_<TSchemaType extends z.ZodObject<z.ZodRawShape>>({
             const isHidden = evaluateConditional(meta?.hidden, false);
             if (isHidden) return null;
 
-            const defaultRender = () => {
-              const params = createControllerParams(fieldConfig, fieldName);
-              const defaultController = params.defaultController;
-
-              return (
-                <FormField
-                  key={key}
-                  control={form.control}
-                  name={fieldName}
-                  render={() => (
-                    <FormItem className="w-full !flex flex-col">
-                      {fieldConfig.type === "switch" ? (
-                        <div className="flex flex-row items-center justify-between space-x-3 py-4">
-                          {labels && (
-                            <Flex direction={"column"} gap={"1"}>
-                              <FormLabel htmlFor={key}>
-                                {fieldConfig.label}
-                              </FormLabel>
-                              {meta?.description && (
-                                <Text size="2" color="gray">
-                                  {renderRichText(meta.description)}
-                                </Text>
-                              )}
-                            </Flex>
-                          )}
-                          <FormControl>
-                            {meta?.controller
-                              ? meta.controller(params)
-                              : defaultController}
-                          </FormControl>
-                        </div>
-                      ) : (
-                        <>
-                          {labels && (
-                            <FormLabel htmlFor={key}>
-                              {fieldConfig.label}
-                            </FormLabel>
-                          )}
-                          <ErrorBoundary
-                            FallbackComponent={(props) => {
-                              console.error("[field-error]:", props.error);
-                              return (
-                                <div>Failed to load field controller.</div>
-                              );
-                            }}
-                          >
-                            <FormControl>
-                              {meta?.controller
-                                ? meta.controller(params)
-                                : defaultController}
-                            </FormControl>
-                          </ErrorBoundary>
-                          {meta?.description && (
-                            <Text size="2" color="gray">
-                              {renderRichText(meta.description)}
-                            </Text>
-                          )}
-                        </>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              );
-            };
-
-            if (meta?.renderer) {
-              const params = createControllerParams(fieldConfig, fieldName);
-              const controllerComponent = meta?.controller
-                ? meta.controller<FV>(params)
-                : params.defaultController;
-
-              return meta.renderer({
-                context,
-                fieldConfig,
-                meta,
-                field: params.field,
-                fieldState: params.fieldState,
-                formState: params.formState,
-                labels,
-                controller: controllerComponent,
-                defaultRender,
-                ui: params.ui,
-              });
-            }
-
             return renderField
               ? renderField({
                   field: fieldConfig,
-                  renderDefault: defaultRender,
+                  renderDefault: () => renderFieldConfig(fieldConfig, fieldName),
                   form,
                 })
-              : defaultRender();
+              : renderFieldConfig(fieldConfig, fieldName);
           })}
         </div>
       ))}
@@ -456,8 +504,10 @@ function Actions_({ className, children }: ActionsProps_) {
   return <div className={cn(className)}>{children}</div>;
 }
 
-interface ActionProps_
-  extends Omit<ButtonProps, "type" | "onClick" | "disabled"> {
+interface ActionProps_ extends Omit<
+  ButtonProps,
+  "type" | "onClick" | "disabled"
+> {
   type?: "submit" | "button";
   tag?: string;
   className?: string;
@@ -504,7 +554,7 @@ function Action_({
 
   return (
     <Button
-      type={type === "submit" ? "submit" : "button"}
+      type={tag ? "button" : type === "submit" ? "submit" : "button"}
       className={cn(className)}
       onClick={handleClick}
       disabled={isDisabled}

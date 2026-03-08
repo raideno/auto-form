@@ -395,17 +395,28 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     if (lessThanConstraint) {
       lessThan = lessThanConstraint;
     }
+  } else if (zodTypeGuards.object(baseType)) {
+    fieldType = "object";
+    placeholder = "";
   } else {
     console.error(`Unsupported Zod type for key "${key}":`, zodType);
     // throw new Error("Unsupported Zod type");
     fieldType = "unsupported";
   }
 
-  if (!meta.placeholder) {
+  if (!meta.placeholder && fieldType !== "object") {
     const inferred = inferTypeFromKey(key, fieldType);
     fieldType = inferred.type;
     placeholder = placeholder || inferred.placeholder;
   }
+
+  const objectFields =
+    fieldType === "object"
+      ? Object.entries((baseType as z.ZodObject<z.ZodRawShape>).shape).map(
+          ([nestedKey, nestedZodType]) =>
+            getFieldType(`${key}.${nestedKey}`, nestedZodType)
+        )
+      : undefined;
 
   return {
     key,
@@ -422,6 +433,7 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     fileMaxSize,
     fileMinSize,
     fileMime,
+    objectFields,
   };
 };
 

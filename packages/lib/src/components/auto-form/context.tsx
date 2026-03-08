@@ -49,6 +49,8 @@ export interface FieldConfig {
   fileMaxSize?: number;
   fileMinSize?: number;
   fileMime?: string | string[];
+  // object fields, only present when type === "object"
+  objectFields?: Array<FieldConfig>;
 }
 
 export type FieldGroup = Array<FieldConfig>;

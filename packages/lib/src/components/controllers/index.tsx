@@ -12,6 +12,7 @@ import { SelectController } from "@/components/controllers/select";
 import { SwitchController } from "@/components/controllers/switch";
 import { TagsController } from "@/components/controllers/tags";
 import { TextAreaController } from "@/components/controllers/text-area";
+import { ObjectController } from "@/components/controllers/object";
 import { TextFieldController } from "@/components/controllers/text-field";
 
 import type { ControllerParams } from "../auto-form/registry";
@@ -51,6 +52,9 @@ export const DefaultControllers: Record<string, C<any>> = {
   // files
   file: FileController,
   files: FilesController,
+
+  // objects
+  object: ObjectController,
 };
 
 export function getDefaultController<

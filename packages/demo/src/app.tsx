@@ -3,8 +3,7 @@ import { AutoForm } from "@raideno/auto-form/ui";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 
 import { cn } from "@/lib/utils";
-import { CodePreview } from "@/code-preview";
-import { INITIAL_SCHEMA_CODE, INITIAL_SCHEMA_STRING } from "@/schema";
+import { INITIAL_SCHEMA_CODE } from "@/schema";
 
 export const App = () => {
   return (
@@ -19,7 +18,6 @@ export const App = () => {
               validation and customizable field types.
             </Text>
           </Box>
-          <CodePreview code={INITIAL_SCHEMA_STRING} />
           <Box>
             <Heading size="4" mb="3">
               Generated Form

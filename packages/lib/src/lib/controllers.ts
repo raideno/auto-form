@@ -9,3 +9,4 @@ export * from "@/components/controllers/select";
 export * from "@/components/controllers/tags";
 export * from "@/components/controllers/file";
 export * from "@/components/controllers/files";
+export * from "@/components/controllers/object";

@@ -23,8 +23,6 @@
   "homepage": "https://github.com/raideno/auto-form#readme",
   "workspaces": [
     "./packages/demo",
-    "./packages/docs",
-    "./packages/libs/main",
-    "./packages/libs/controllers"
+    "./packages/lib"
   ]
 }

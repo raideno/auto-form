@@ -43,7 +43,11 @@
       "import": "./dist/lib/zod.js",
       "require": "./dist/lib/zod.cjs"
     },
-    "./styles.css": "./dist/lib/style.css"
+    "./styles.css": {
+      "types": "./dist/lib/styles.d.ts",
+      "import": "./dist/lib/styles.css",
+      "require": "./dist/lib/styles.css"
+    }
   },
   "files": [
     "dist",
@@ -70,7 +74,7 @@
   },
   "homepage": "https://github.com/raideno/auto-form#readme",
   "scripts": {
-    "dev": "vite --config vite.config.ts",
+    "dev": "vite build --watch --config vite.config.ts",
     "build": "vite build --config vite.config.ts"
   },
   "devDependencies": {

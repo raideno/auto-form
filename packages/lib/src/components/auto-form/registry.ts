@@ -75,6 +75,12 @@ export type ControllerParams<
   };
   // Default controller component for fallback
   defaultController: React.ReactNode;
+  /**
+   * Renders a list of field configs as form fields.
+   * Provided for object (and custom) controllers so they can render
+   * nested fields without re-implementing the rendering logic.
+   */
+  renderFields: (fields: FieldConfig[]) => React.ReactNode;
 };
 
 export type CommonMetadata = {
