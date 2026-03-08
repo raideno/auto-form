@@ -51,6 +51,8 @@ export interface FieldConfig {
   fileMime?: string | string[];
   // object fields, only present when type === "object"
   objectFields?: Array<FieldConfig>;
+  // object fields template, only present when type === "array-of-objects"
+  arrayObjectFields?: Array<FieldConfig>;
 }
 
 export type FieldGroup = Array<FieldConfig>;

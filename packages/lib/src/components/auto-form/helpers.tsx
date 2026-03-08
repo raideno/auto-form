@@ -290,6 +290,11 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
       placeholder = placeholder || DEFAULT_PLACEHOLDERS.tags;
       minLength = getNumericConstraint(checks, "min_length")?.value;
       maxLength = getNumericConstraint(checks, "max_length")?.value;
+    } else if (zodTypeGuards.object(arrayElementType)) {
+      fieldType = "array-of-objects";
+      placeholder = "";
+      minLength = getNumericConstraint(checks, "min_length")?.value;
+      maxLength = getNumericConstraint(checks, "max_length")?.value;
     } else {
       // throw new Error("Only string and file arrays are supported.");
       console.error(
@@ -404,7 +409,7 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     fieldType = "unsupported";
   }
 
-  if (!meta.placeholder && fieldType !== "object") {
+  if (!meta.placeholder && fieldType !== "object" && fieldType !== "array-of-objects") {
     const inferred = inferTypeFromKey(key, fieldType);
     fieldType = inferred.type;
     placeholder = placeholder || inferred.placeholder;
@@ -415,6 +420,18 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
       ? Object.entries((baseType as z.ZodObject<z.ZodRawShape>).shape).map(
           ([nestedKey, nestedZodType]) =>
             getFieldType(`${key}.${nestedKey}`, nestedZodType)
+        )
+      : undefined;
+
+  const arrayObjectFields =
+    fieldType === "array-of-objects"
+      ? Object.entries(
+          (
+            (baseType as z.ZodArray<z.ZodTypeAny>)
+              .def.element as z.ZodObject<z.ZodRawShape>
+          ).shape
+        ).map(([nestedKey, nestedZodType]) =>
+          getFieldType(nestedKey, nestedZodType)
         )
       : undefined;
 
@@ -434,6 +451,7 @@ export const getFieldType = (key: string, zodType: unknown): FieldConfig => {
     fileMinSize,
     fileMime,
     objectFields,
+    arrayObjectFields,
   };
 };
 

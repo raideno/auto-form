@@ -13,6 +13,7 @@ import { SwitchController } from "@/components/controllers/switch";
 import { TagsController } from "@/components/controllers/tags";
 import { TextAreaController } from "@/components/controllers/text-area";
 import { ObjectController } from "@/components/controllers/object";
+import { ArrayOfObjectsController } from "@/components/controllers/array-of-objects";
 import { TextFieldController } from "@/components/controllers/text-field";
 
 import type { ControllerParams } from "../auto-form/registry";
@@ -55,6 +56,7 @@ export const DefaultControllers: Record<string, C<any>> = {
 
   // objects
   object: ObjectController,
+  "array-of-objects": ArrayOfObjectsController,
 };
 
 export function getDefaultController<

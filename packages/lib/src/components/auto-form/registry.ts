@@ -57,6 +57,7 @@ export type FieldConfigBase = {
   fileMinSize?: number;
   fileMime?: string | string[];
   objectFields?: FieldConfigBase[];
+  arrayObjectFields?: FieldConfigBase[];
 };
 
 export type RenderParams<

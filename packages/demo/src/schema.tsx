@@ -31,5 +31,11 @@ export const INITIAL_SCHEMA_CODE = z_.object({
   properties: z_.object({
     firstname: z_.string().register(MetadataRegistry, { label: "Firstname" }),
     lastname: z_.string().register(MetadataRegistry, { label: "Lastname" })
-  })
+  }),
+  contacts: z_.array(
+    z_.object({
+      name: z_.string().register(MetadataRegistry, { label: "Name" }),
+      email: z_.string().email().register(MetadataRegistry, { label: "Email" }),
+    })
+  ).max(3)
 });
