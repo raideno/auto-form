@@ -15,7 +15,6 @@ export const INITIAL_SCHEMA_CODE = z_.object({
       withControls: true,
       step: 10,
       placeholder: "100",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       controller: PriceController,
     }),
   description: z_
@@ -23,6 +22,7 @@ export const INITIAL_SCHEMA_CODE = z_.object({
     .optional()
     .nullable()
     .register(MetadataRegistry, { type: "textarea", resize: true }),
+  status: z_.boolean(),
   theme: z_
     .enum(["light", "dark"])
     .optional()

@@ -10,6 +10,7 @@ export function SwitchController<TFieldValues extends FieldValues>(
 
   return (
     <Switch
+      id={params.fieldConfig.key}
       checked={!!field.value}
       onCheckedChange={(checked) => field.onChange(checked)}
       disabled={ui.disabled}
